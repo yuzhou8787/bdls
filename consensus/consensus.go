@@ -1099,25 +1099,27 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 		// we only keep the message from the max round.
 		// NOTE: we don't touch current round to prevent removing
 		// valid proofs.
-		if m.Round != c.currentRound.RoundNumber {
-			var next *list.Element
-			for elem := c.rounds.Front(); elem != nil; elem = next {
-				next = elem.Next()
-				cr := elem.Value.(*consensusRound)
-				if idx := cr.FindRoundChange(signed); idx != -1 { // located!
-					if cr.RoundNumber > m.Round {
-						// existing message is higher than incoming message,
-						// just ignore.
-						return nil
-					} else if cr.RoundNumber < m.Round {
-						// existing message is lower than incoming message,
-						// remove the existing message from this round.
-						cr.RemoveRoundChange(idx)
-						// if no message remained in this round, release
-						// the round resources too, to prevent OOM attack
-						if cr.NumRoundChanges() == 0 {
-							c.rounds.Remove(elem)
-						}
+		// NOTE: the total messages are bounded to max 2*participants
+		// at any time, so the loop has O(n) time complexity
+		var next *list.Element
+		for elem := c.rounds.Front(); elem != nil; elem = next {
+			next = elem.Next()
+			cr := elem.Value.(*consensusRound)
+			if idx := cr.FindRoundChange(signed); idx != -1 { // located!
+				if m.Round == c.currentRound.RoundNumber { // don't remove now!
+					continue
+				} else if cr.RoundNumber > m.Round {
+					// existing message is higher than incoming message,
+					// just ignore.
+					return nil
+				} else if cr.RoundNumber < m.Round {
+					// existing message is lower than incoming message,
+					// remove the existing message from this round.
+					cr.RemoveRoundChange(idx)
+					// if no message remained in this round, release
+					// the round resources too, to prevent OOM attack
+					if cr.NumRoundChanges() == 0 {
+						c.rounds.Remove(elem)
 					}
 				}
 			}
