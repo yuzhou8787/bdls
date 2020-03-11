@@ -864,14 +864,14 @@ func (c *Consensus) broadcastSelect() {
 
 // broadcastDecide will broadcast a <decide> message by the leader,
 // from current round with <commit> proofs.
-func (c *Consensus) broadcastDecide() {
+func (c *Consensus) broadcastDecide() *SignedProto {
 	var m Message
 	m.Type = MessageType_Decide
 	m.Height = c.latestHeight + 1
 	m.Round = c.currentRound.RoundNumber
 	m.State = c.currentRound.LockedState
 	m.Proof = c.currentRound.SignedCommits()
-	c.broadcast(&m)
+	return c.broadcast(&m)
 	//log.Println("broadcast:<decide>")
 }
 
@@ -895,7 +895,7 @@ func (c *Consensus) sendCommit(msgLock *Message) {
 }
 
 // broadcast signs the message with private key before broadcasting to all peers.
-func (c *Consensus) broadcast(m *Message) {
+func (c *Consensus) broadcast(m *Message) *SignedProto {
 	// sign
 	sp := new(SignedProto)
 	sp.Version = ProtocolVersion
@@ -914,6 +914,7 @@ func (c *Consensus) broadcast(m *Message) {
 
 	// we also need to send this message to myself
 	c.loopback = append(c.loopback, out)
+	return sp
 }
 
 /*
@@ -1010,10 +1011,10 @@ func (c *Consensus) currentLeader() coordinate {
 
 // heightSync changes current height to the given height with state
 // resets all fields to this new height.
-func (c *Consensus) heightSync(height uint64, s State, now time.Time) {
-	c.latestHeight = height                    // set height
-	c.latestRound = c.currentRound.RoundNumber // set round
-	c.latestState = s                          // set state
+func (c *Consensus) heightSync(height uint64, round uint64, s State, now time.Time) {
+	c.latestHeight = height // set height
+	c.latestRound = round   // set round
+	c.latestState = s       // set state
 
 	c.currentRound = nil // clean current round pointer
 	c.rounds.Init()      // clean all round
@@ -1021,7 +1022,6 @@ func (c *Consensus) heightSync(height uint64, s State, now time.Time) {
 	c.unconfirmed = nil  // clean all unconfirmed states from previous heights
 	c.switchRound(0)     // start new round at new height
 	c.currentRound.Stage = stageRoundChanging
-	c.rcTimeout = now.Add(c.roundchangeDuration(0))
 }
 
 // t calculates (n-1)/3
@@ -1297,11 +1297,14 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 						log.Println("Round:", c.currentRound.RoundNumber)
 						log.Println("State:", State(c.currentRound.LockedState).hash())
 					*/
-					// use loop back message to move to the next height.
-					c.broadcastDecide()
-					// c.heightSync(c.latestHeight+1, c.currentRound.LockedState, now)
+
+					// broadcast decide will return what it has sent
+					c.latestProof = c.broadcastDecide()
+					c.heightSync(c.latestHeight+1, c.currentRound.RoundNumber, c.currentRound.LockedState, now)
+					// leader should wait for 1 more latency
+					c.rcTimeout = now.Add(c.roundchangeDuration(0) + c.latency)
 					// broadcast <roundchange> at new height
-					// c.broadcastRoundChange()
+					c.broadcastRoundChange()
 				}
 			}
 		}
@@ -1312,15 +1315,18 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 			return err
 		}
 
+		// record this proof for chaining
+		c.latestProof = signed
+
 		// propagate this <decide> message to my neighbour.
 		// NOTE: verifyDecideMessage() can stop broadcast storm.
 		c.propagate(bts)
 		// passive confirmation from the leader.
-		c.heightSync(m.Height, m.State, now)
+		c.heightSync(m.Height, m.Round, m.State, now)
+		// non-leader starts waiting for rcTimeout
+		c.rcTimeout = now.Add(c.roundchangeDuration(0))
 		// we sync our height and broadcast new <roundchange>.
 		c.broadcastRoundChange()
-		// record this proof for chaining
-		c.latestProof = signed
 	default:
 		return ErrMessageUnknownMessageType
 	}
