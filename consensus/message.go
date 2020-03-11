@@ -63,12 +63,12 @@ func (t *PubKeyAxis) MarshalTo(data []byte) (n int, err error) {
 // Unmarshal implements protobuf Unmarshal
 func (t *PubKeyAxis) Unmarshal(data []byte) error {
 	// mor than 32 bytes, illegal axis
-	if len(data) > 32 {
+	if len(data) > SizeAxis {
 		return ErrPubKey
 	}
 
 	// if data is less than 32 bytes, we MUST keep the leading 0 zeros.
-	off := 32 - len(data)
+	off := SizeAxis - len(data)
 	copy((*t)[off:], data)
 	return nil
 }
