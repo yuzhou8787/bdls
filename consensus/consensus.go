@@ -345,7 +345,7 @@ func (c *Consensus) init(config *Config) {
 
 //  calculates roundchangeDuration
 func (c *Consensus) roundchangeDuration(round uint64) time.Duration {
-	return 2 * time.Duration(round+1) * c.latency
+	return time.Duration(round+1) * c.latency
 }
 
 //  calculates collectDuration
@@ -365,7 +365,7 @@ func (c *Consensus) commitDuration(round uint64) time.Duration {
 
 // calculates lockReleaseDuration
 func (c *Consensus) lockReleaseDuration(round uint64) time.Duration {
-	return 2 * time.Duration(round+1) * c.latency
+	return time.Duration(round+1) * c.latency
 }
 
 // maximalLocked finds the maximum locked data in this round,
