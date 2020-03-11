@@ -1,0 +1,70 @@
+// Copyright (c) 2020 Sperax
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+syntax = "proto3";
+package consensus;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+// SignedProto defines a message with signature and it's publickey
+message SignedProto {
+	uint32 version=1;
+	// the Message encoded raw protobuf in bytes
+	bytes Message=2;
+	// signer's public key
+	bytes x = 3 [(gogoproto.customtype) = "PubKeyAxis", (gogoproto.nullable) = false];
+	bytes y = 4 [(gogoproto.customtype) = "PubKeyAxis", (gogoproto.nullable) = false];
+	// signature r,s for prefix+messages+version+x+y above
+	bytes r = 5;
+	bytes s = 6;
+}
+
+// MessageType defines supported message types
+enum MessageType{
+	// No operation, for default message type, and keepalive connection
+	Nop = 0;
+	// MessageRoundChange = <roundchange> message
+	RoundChange = 1;
+	// MessageLock = <lock> message
+	Lock = 2;
+	// MessageSelect = <select> message
+	Select = 3;
+	// MessageCommit = <commit> message
+	Commit = 4; 
+	// MessageLockRelease = <lock-release> message
+	LockRelease = 5;
+	// MessageDecide = <decide> message
+	Decide = 6;
+}
+
+// Message defines a consensus message
+message Message {
+	// Type of this message
+	MessageType Type = 1;
+	// Height in consensus
+	uint64 Height = 2;
+	// Round in consensus
+	uint64 Round  = 3; 
+	// Proposed state (optional)
+	bytes State = 4; 
+	// Proofs related
+	repeated SignedProto Proof=5;
+	// for lock-release, it's an embeded <lock> message
+	SignedProto LockRelease=6;
+}
