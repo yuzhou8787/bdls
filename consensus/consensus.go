@@ -340,11 +340,13 @@ func (c *Consensus) init(config *Config) {
 	c.currentRound.Stage = stageRoundChanging
 	c.broadcastRoundChange()
 	// set rcTimeout to lockTimeout
-	c.rcTimeout = config.Epoch.Add(c.roundchangeDuration())
+	c.rcTimeout = config.Epoch.Add(c.roundchangeDuration(0))
 }
 
 //  calculates roundchangeDuration
-func (c *Consensus) roundchangeDuration() time.Duration { return 2 * c.latency }
+func (c *Consensus) roundchangeDuration(round uint64) time.Duration {
+	return 2 * time.Duration(round+1) * c.latency
+}
 
 //  calculates collectDuration
 func (c *Consensus) collectDuration(round uint64) time.Duration {
@@ -1019,7 +1021,7 @@ func (c *Consensus) heightSync(height uint64, s State, now time.Time) {
 	c.unconfirmed = nil  // clean all unconfirmed states from previous heights
 	c.switchRound(0)     // start new round at new height
 	c.currentRound.Stage = stageRoundChanging
-	c.rcTimeout = now.Add(c.roundchangeDuration())
+	c.rcTimeout = now.Add(c.roundchangeDuration(0))
 }
 
 // t calculates (n-1)/3
@@ -1351,7 +1353,7 @@ func (c *Consensus) Update(now time.Time) error {
 
 		if now.After(c.rcTimeout) {
 			c.broadcastRoundChange()
-			c.rcTimeout = now.Add(c.roundchangeDuration())
+			c.rcTimeout = now.Add(c.roundchangeDuration(c.currentRound.RoundNumber))
 		}
 	case stageLock:
 		if c.lockTimeout.IsZero() {
@@ -1421,7 +1423,8 @@ func (c *Consensus) Update(now time.Time) error {
 			c.currentRound.Stage = stageRoundChanging
 			// move to round +1 when lock release has timeout
 			c.switchRound(c.currentRound.RoundNumber + 1)
-			c.rcTimeout = now.Add(time.Second)
+			c.broadcastRoundChange()
+			c.rcTimeout = now.Add(c.roundchangeDuration(c.currentRound.RoundNumber))
 		}
 	}
 	return nil
