@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	// ProtocolVersion is the current BDLS protocl implementation version,
+	// ProtocolVersion is the current BDLS protocol implementation version,
 	// version wil be sent along with messages for protocol upgrading.
 	ProtocolVersion = 1
 	// DefaultConsensusLatency is the default latency setting for consensus protocol,
@@ -365,7 +365,7 @@ func (c *Consensus) commitDuration(round uint64) time.Duration {
 
 // calculates lockReleaseDuration
 func (c *Consensus) lockReleaseDuration(round uint64) time.Duration {
-	return time.Duration(round+1) * c.latency
+	return 2 * time.Duration(round+1) * c.latency
 }
 
 // maximalLocked finds the maximum locked data in this round,
