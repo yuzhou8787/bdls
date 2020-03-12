@@ -844,6 +844,7 @@ func (c *Consensus) broadcastLockRelease(signed *SignedProto) {
 	var m Message
 	m.Type = MessageType_LockRelease
 	m.Height = c.latestHeight + 1
+	m.Round = c.currentRound.RoundNumber
 	m.LockRelease = signed
 	c.broadcast(&m)
 	//log.Println("broadcast:<lock-release>")
