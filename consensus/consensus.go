@@ -1206,6 +1206,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 			c.currentRound.Stage = stageLockRelease
 			c.lockReleaseTimeout = now.Add(c.commitDuration(m.Round))
 			c.lockRelease()
+			// add to Blockj
 			c.Propose(m.State)
 		}
 
