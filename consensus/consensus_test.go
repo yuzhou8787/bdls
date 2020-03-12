@@ -520,6 +520,48 @@ func TestConsensusFull50Participants(t *testing.T) {
 	beginTest(t, params)
 }
 
+func TestConsensusFull80Participants(t *testing.T) {
+	var params = []testParam{
+		{
+			numPeers:        80,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         100 * time.Millisecond,
+			expectedLatency: 100 * time.Millisecond,
+		},
+		{
+			numPeers:        80,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         200 * time.Millisecond,
+			expectedLatency: 200 * time.Millisecond,
+		},
+		{
+			numPeers:        80,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         300 * time.Millisecond,
+			expectedLatency: 300 * time.Millisecond,
+		},
+		{
+			numPeers:        80,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         500 * time.Millisecond,
+			expectedLatency: 500 * time.Millisecond,
+		},
+		{
+			numPeers:        80,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         1000 * time.Millisecond,
+			expectedLatency: 1000 * time.Millisecond,
+		},
+	}
+
+	beginTest(t, params)
+}
+
 func TestConsensusFull100Participants(t *testing.T) {
 	var params = []testParam{
 		{
@@ -691,6 +733,49 @@ func TestConsensusPartial50Participants(t *testing.T) {
 	beginTest(t, params)
 }
 
+func TestConsensusPartial80Participants(t *testing.T) {
+	n := 2*(80-1)/3 + 1
+	var params = []testParam{
+		{
+			numPeers:        n,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         100 * time.Millisecond,
+			expectedLatency: 100 * time.Millisecond,
+		},
+		{
+			numPeers:        n,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         200 * time.Millisecond,
+			expectedLatency: 200 * time.Millisecond,
+		},
+		{
+			numPeers:        n,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         300 * time.Millisecond,
+			expectedLatency: 300 * time.Millisecond,
+		},
+		{
+			numPeers:        n,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         500 * time.Millisecond,
+			expectedLatency: 500 * time.Millisecond,
+		},
+		{
+			numPeers:        n,
+			numParticipants: 80,
+			stopHeight:      5,
+			latency:         1000 * time.Millisecond,
+			expectedLatency: 1000 * time.Millisecond,
+		},
+	}
+
+	beginTest(t, params)
+}
+
 func TestConsensusPartial100Participants(t *testing.T) {
 	n := 2*(100-1)/3 + 1
 	var params = []testParam{
@@ -734,39 +819,39 @@ func TestConsensusPartial100Participants(t *testing.T) {
 	beginTest(t, params)
 }
 
-func TestConsensusFull100LatencyHigherThanExpected(t *testing.T) {
+func TestConsensusFull50LatencyHigherThanExpected(t *testing.T) {
 	var params = []testParam{
 		{
-			numPeers:        100,
-			numParticipants: 100,
+			numPeers:        50,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         100 * time.Millisecond,
 			expectedLatency: 50 * time.Millisecond,
 		},
 		{
-			numPeers:        100,
-			numParticipants: 100,
+			numPeers:        50,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         200 * time.Millisecond,
 			expectedLatency: 100 * time.Millisecond,
 		},
 		{
-			numPeers:        100,
-			numParticipants: 100,
+			numPeers:        50,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         300 * time.Millisecond,
 			expectedLatency: 150 * time.Millisecond,
 		},
 		{
-			numPeers:        100,
-			numParticipants: 100,
+			numPeers:        50,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         500 * time.Millisecond,
 			expectedLatency: 250 * time.Millisecond,
 		},
 		{
-			numPeers:        100,
-			numParticipants: 100,
+			numPeers:        50,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         1000 * time.Millisecond,
 			expectedLatency: 500 * time.Millisecond,
@@ -776,40 +861,40 @@ func TestConsensusFull100LatencyHigherThanExpected(t *testing.T) {
 	beginTest(t, params)
 }
 
-func TestConsensusPartial100LatencyHigherThanExpected(t *testing.T) {
-	n := 2*(100-1)/3 + 1
+func TestConsensusPartial50LatencyHigherThanExpected(t *testing.T) {
+	n := 2*(50-1)/3 + 1
 	var params = []testParam{
 		{
 			numPeers:        n,
-			numParticipants: 100,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         100 * time.Millisecond,
 			expectedLatency: 50 * time.Millisecond,
 		},
 		{
 			numPeers:        n,
-			numParticipants: 100,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         200 * time.Millisecond,
 			expectedLatency: 100 * time.Millisecond,
 		},
 		{
 			numPeers:        n,
-			numParticipants: 100,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         300 * time.Millisecond,
 			expectedLatency: 150 * time.Millisecond,
 		},
 		{
 			numPeers:        n,
-			numParticipants: 100,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         500 * time.Millisecond,
 			expectedLatency: 250 * time.Millisecond,
 		},
 		{
 			numPeers:        n,
-			numParticipants: 100,
+			numParticipants: 50,
 			stopHeight:      5,
 			latency:         1000 * time.Millisecond,
 			expectedLatency: 500 * time.Millisecond,
