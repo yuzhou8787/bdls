@@ -35,17 +35,20 @@ const (
 	// ProtocolVersion is the current BDLS protocol implementation version,
 	// version wil be sent along with messages for protocol upgrading.
 	ProtocolVersion = 1
-	// DefaultConsensusLatency is the default latency setting for consensus protocol,
-	// user can adjust this setting via SetLatency()
+	// DefaultConsensusLatency is the default propagation latency setting for
+	// consensus protocol, user can adjust this setting via SetLatency()
 	DefaultConsensusLatency = 150 * time.Millisecond
 )
 
 type (
-	State     []byte   // State is value to participant in consensus
-	StateHash [32]byte // state hash
+	// State is the data to participant in consensus
+	State []byte
+	// StateHash is a fixed size hash to identify a state
+	StateHash [blake2b.Size256]byte
 )
 
-// default hash function
+// DefaultHash is the system default hash function, if a hash function has
+// not specified in config, this one will be used to hash and identify a state.
 func DefaultHash(s State) StateHash { return blake2b.Sum256(s) }
 
 type (
@@ -65,9 +68,9 @@ const (
 // messageTuple contains a decoded incoming message, and it's raw encoding
 // with signature.
 type messageTuple struct {
-	StateHash StateHash // computed while adding
-	Message   *Message
-	Signed    *SignedProto
+	StateHash StateHash    // computed while adding
+	Message   *Message     // the decoded message
+	Signed    *SignedProto // the encoded message with signature
 }
 
 // a sorter for messageTuple slice
@@ -280,7 +283,7 @@ type Consensus struct {
 	// private key
 	privateKey *ecdsa.PrivateKey
 	// my publickey coodinate
-	coordinate coordinate
+	coordinate Coordinate
 
 	// transmission delay
 	latency time.Duration
@@ -289,10 +292,10 @@ type Consensus struct {
 	peers []Peer
 
 	// participants is the consensus group, current leader is r % quorum
-	participants []coordinate
+	participants []Coordinate
 
 	// NOTE: fixed leader for testing purpose
-	fixedLeader *coordinate
+	fixedLeader *Coordinate
 
 	// broadcasting messages being sent to myself
 	loopback [][]byte
@@ -500,7 +503,7 @@ func (c *Consensus) verifyLockMessage(m *Message, signed *SignedProto) error {
 	}
 
 	// validate proofs enclosed in the message one by one
-	rcs := make(map[coordinate]State)
+	rcs := make(map[Coordinate]State)
 	for _, proof := range m.Proof {
 		// first we need to verify the signature,and identity of this proof
 		mProof, err := c.verifyMessage(proof)
@@ -535,7 +538,7 @@ func (c *Consensus) verifyLockMessage(m *Message, signed *SignedProto) error {
 
 		// use map to guarantee we will only accept at most 1 message from one
 		// individual participant
-		rcs[proof.Coordiante()] = mProof.State
+		rcs[proof.Coordinate()] = mProof.State
 	}
 
 	// count individual proofs to B', which has already guaranteed to be the maximal one.
@@ -604,7 +607,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 		return ErrSelectNotSignedByLeader
 	}
 
-	rcs := make(map[coordinate]State)
+	rcs := make(map[Coordinate]State)
 	for _, proof := range m.Proof {
 		mProof, err := c.verifyMessage(proof)
 		if err != nil {
@@ -642,7 +645,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 		}
 
 		// we also stores B'' == NULL for counting
-		rcs[proof.Coordiante()] = mProof.State
+		rcs[proof.Coordinate()] = mProof.State
 	}
 
 	// check we have at least 2*t+1 proof
@@ -741,7 +744,7 @@ func (c *Consensus) verifyDecideMessage(m *Message, signed *SignedProto) error {
 		return ErrDecideNotSignedByLeader
 	}
 
-	commits := make(map[coordinate]State)
+	commits := make(map[Coordinate]State)
 	for _, proof := range m.Proof {
 		mProof, err := c.verifyMessage(proof)
 		if err != nil {
@@ -774,7 +777,7 @@ func (c *Consensus) verifyDecideMessage(m *Message, signed *SignedProto) error {
 			}
 		}
 
-		commits[proof.Coordiante()] = mProof.State
+		commits[proof.Coordinate()] = mProof.State
 	}
 
 	// count proofs to m.State
@@ -947,7 +950,7 @@ func (c *Consensus) sendTo(m *Message, publicKey *ecdsa.PublicKey) {
 func (c *Consensus) propagate(bts []byte) {
 	// send to peers one by one
 	for _, peer := range c.peers {
-		peer.Send(bts)
+		_ = peer.Send(bts)
 	}
 }
 
@@ -1002,7 +1005,7 @@ func (c *Consensus) lockRelease() {
 func (c *Consensus) switchRound(round uint64) { c.currentRound = c.getRound(round, true) }
 
 // currentLeader returns current leader's coordinate
-func (c *Consensus) currentLeader() coordinate {
+func (c *Consensus) currentLeader() Coordinate {
 	// NOTE: fixed leader is for testing
 	if c.fixedLeader != nil {
 		return *c.fixedLeader
@@ -1055,7 +1058,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 			bts := c.loopback[0]
 			c.loopback = c.loopback[1:]
 			// NOTE: message directed to myself ignores error.
-			c.ReceiveMessage(bts, now)
+			_ = c.ReceiveMessage(bts, now)
 		}
 	}()
 
@@ -1343,7 +1346,7 @@ func (c *Consensus) Update(now time.Time) error {
 		for len(c.loopback) > 0 {
 			bts := c.loopback[0]
 			c.loopback = c.loopback[1:]
-			c.ReceiveMessage(bts, now)
+			_ = c.ReceiveMessage(bts, now)
 		}
 	}()
 
@@ -1370,10 +1373,8 @@ func (c *Consensus) Update(now time.Time) error {
 		}
 		// leader's collection, we perform periodically check for <lock> or <select>
 		// check to see if I'm the leader of this round to perform collect timeout
-		var isLeader bool
 		leaderKey := c.currentLeader()
 		if leaderKey == c.coordinate {
-			isLeader = true
 			// check if we have enough 2t+1 <roundchange> to lock B',
 			// which B' != NULL
 			if c.currentRound.MaxProposedCount >= 2*c.t()+1 {
@@ -1405,10 +1406,8 @@ func (c *Consensus) Update(now time.Time) error {
 				c.lockRelease()
 				return nil
 			}
-		}
-
-		// non-leader's lock timeout, enters commit status and set timeout
-		if !isLeader && now.After(c.lockTimeout) {
+		} else if now.After(c.lockTimeout) {
+			// non-leader's lock timeout, enters commit status and set timeout
 			c.currentRound.Stage = stageCommit
 			c.commitTimeout = now.Add(c.commitDuration(c.currentRound.RoundNumber))
 		}
@@ -1447,9 +1446,7 @@ func (c *Consensus) CurrentState() (height uint64, round uint64, data State) {
 }
 
 // CurrentProof returns current <decide> message for current height
-func (c *Consensus) CurrentProof() *SignedProto {
-	return c.latestProof
-}
+func (c *Consensus) CurrentProof() *SignedProto { return c.latestProof }
 
 // SetLatency sets participants expected latency for consensus core
 func (c *Consensus) SetLatency(latency time.Duration) { c.latency = latency }

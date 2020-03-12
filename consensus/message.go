@@ -43,7 +43,7 @@ const (
 	// SizeAxis defines bytes size of X-axis or Y-axis in a public key
 	SizeAxis = 32
 	// SignaturePrefix is the prefix for signing a consensus message
-	SignaturePrefix = "==BDLS CONSENSUS MESSAGE=="
+	SignaturePrefix = "===Sperax Signed Message===\n"
 )
 
 // PubKeyAxis defines X-axis or Y-axis in a public key
@@ -82,11 +82,11 @@ func (t PubKeyAxis) MarshalJSON() ([]byte, error) { return json.Marshal(t) }
 // UnmarshalJSON implements protobuf UnmarshalJSON
 func (t *PubKeyAxis) UnmarshalJSON(data []byte) error { return json.Unmarshal(data, t) }
 
-// coordiante encodes X-axis and Y-axis for a publickey in an array
-type coordinate [2 * SizeAxis]byte
+// Coordinate encodes X-axis and Y-axis for a publickey in an array
+type Coordinate [2 * SizeAxis]byte
 
 // create coordinate from public key
-func newCoordFromPubKey(pubkey *ecdsa.PublicKey) (ret coordinate) {
+func newCoordFromPubKey(pubkey *ecdsa.PublicKey) (ret Coordinate) {
 	var X PubKeyAxis
 	var Y PubKeyAxis
 
@@ -105,16 +105,16 @@ func newCoordFromPubKey(pubkey *ecdsa.PublicKey) (ret coordinate) {
 	return
 }
 
-// test if X,Y axis equals to a coordinates
-func (c coordinate) Equal(x1 PubKeyAxis, y1 PubKeyAxis) bool {
+// Equal test if X,Y axis equals to a coordinates
+func (c Coordinate) Equal(x1 PubKeyAxis, y1 PubKeyAxis) bool {
 	if bytes.Equal(x1[:], c[:SizeAxis]) && bytes.Equal(y1[:], c[SizeAxis:]) {
 		return true
 	}
 	return false
 }
 
-// Coordiante encodes X,Y in public key
-func (sp *SignedProto) Coordiante() (ret coordinate) {
+// Coordinate encodes X,Y into a coordinate
+func (sp *SignedProto) Coordinate() (ret Coordinate) {
 	copy(ret[:SizeAxis], sp.X[:])
 	copy(ret[SizeAxis:], sp.Y[:])
 	return
@@ -165,7 +165,7 @@ func (sp *SignedProto) Hash() []byte {
 	return hash.Sum(nil)
 }
 
-// Sign the message into a signed consensusMessage
+// Sign the message with a private key
 func (sp *SignedProto) Sign(m *Message, privateKey *ecdsa.PrivateKey) {
 	bts, err := proto.Marshal(m)
 	if err != nil {

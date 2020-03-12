@@ -128,7 +128,7 @@ func (p *IPCPeer) update() {
 	default:
 		if p.c != nil {
 			// call consensus update
-			p.c.Update(time.Now())
+			_ = p.c.Update(time.Now())
 			timer.SystemTimedSched.Put(p.update, time.Now().Add(20*time.Millisecond))
 		}
 	}

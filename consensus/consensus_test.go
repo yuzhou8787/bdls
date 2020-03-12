@@ -59,7 +59,8 @@ func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.
 
 	// mock data
 	initialData := make([]byte, 1024)
-	io.ReadFull(rand.Reader, initialData)
+	_, err = io.ReadFull(rand.Reader, initialData)
+	assert.Nil(t, err)
 
 	// mock config
 	config := new(Config)
@@ -109,7 +110,7 @@ func TestProposeMultipleRoundChanges(t *testing.T) {
 
 		bts, err := proto.Marshal(signedRc)
 		assert.Nil(t, err)
-		consensus.ReceiveMessage(bts, time.Now())
+		_ = consensus.ReceiveMessage(bts, time.Now())
 	}
 
 	// count messages
@@ -187,7 +188,7 @@ func TestRoundSequentiality(t *testing.T) {
 	consensus := createConsensus(t, 0, 0, nil)
 	var round uint64
 	for i := 0; i < 10000; i++ {
-		binary.Read(rand.Reader, binary.LittleEndian, &round)
+		_ = binary.Read(rand.Reader, binary.LittleEndian, &round)
 		consensus.getRound(round, false)
 	}
 
@@ -324,7 +325,7 @@ func testStageChange(t *testing.T, leader bool) {
 	assert.True(t, !consensus.lockTimeout.IsZero())
 
 	// force expire and update
-	consensus.Update(time.Now().Add(time.Hour))
+	_ = consensus.Update(time.Now().Add(time.Hour))
 
 	if leader {
 		// leader should have switched to stageLockRelease for random content
@@ -341,7 +342,7 @@ func testStageChange(t *testing.T, leader bool) {
 	}
 
 	// force expire again ,should've switch to roundchanging
-	consensus.Update(time.Now().Add(3 * time.Hour))
+	_ = consensus.Update(time.Now().Add(3 * time.Hour))
 	assert.Equal(t, stageRoundChanging, consensus.currentRound.Stage)
 
 }
