@@ -431,6 +431,10 @@ func (c *Consensus) verifyMessage(signed *SignedProto) (*Message, error) {
 		}
 	}
 
+	if !knownParticipants {
+		return nil, ErrMessageUnknownParticipant
+	}
+
 	/*
 		// public key validation
 		p := defaultCurve.Params().P
@@ -447,10 +451,6 @@ func (c *Consensus) verifyMessage(signed *SignedProto) (*Message, error) {
 	// as public key is proven , we don't have to verify the public key
 	if !signed.Verify() {
 		return nil, ErrMessageSignature
-	}
-
-	if !knownParticipants {
-		return nil, ErrMessageUnknownParticipant
 	}
 
 	// decode message
