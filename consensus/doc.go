@@ -3,10 +3,11 @@
 
 	To make the runtime behavior of consensus algorithm predictable, as a function:
 	y = f(x, t), where 'x' is the message it received, and 't' is the time while being called,
+	and 'y' is the deterministic status of consensus after 'x' and 't' applied to 'f',
 	this library has been designed in a deterministic scheme, without parallel
-	computing, networking, and even current time is a parameter to this library.
+	computing, networking, and current time is a parameter to this library.
 
-	As it's a pure algorithm implementation, it's not thread-safe then! Users of this library
+	As it's a pure algorithm implementation, it's not thread-safe! Users of this library
 	should take care of their own sychronziation mechanism.
 */
 package consensus
