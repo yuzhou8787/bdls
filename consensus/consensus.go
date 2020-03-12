@@ -142,6 +142,7 @@ func (r *consensusRound) RemoveRoundChange(idx int) {
 	// swap to the end and shrink slice
 	n := len(r.roundChanges) - 1
 	r.roundChanges[idx], r.roundChanges[n] = r.roundChanges[n], r.roundChanges[idx]
+	r.roundChanges[n] = messageTuple{} // set to nil to avoid memory leak
 	r.roundChanges = r.roundChanges[:n]
 }
 
