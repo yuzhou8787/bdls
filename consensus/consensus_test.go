@@ -906,7 +906,7 @@ func TestConsensusPartial50LatencyHigherThanExpected(t *testing.T) {
 
 func beginTest(t *testing.T, params []testParam) {
 	var table = tablewriter.NewWriter(os.Stderr)
-	table.SetHeader([]string{"DECIDE.AVG", "DECIDE.ROUNDS", "PEER.NUM", "PJ.NUM", "NET.MSGS", "NET.BYTES", "MSG.AVGSIZE", "PEER.RATE", "DELAY.MIN", "DELAY.MAX", "DELAY.AVG", "DELAY.EXP"})
+	table.SetHeader([]string{"DECIDE.AVG", "DECIDE.ROUNDS", "PEER.NUM", "PJ.NUM", "NET.MSGS", "NET.BYTES", "MSG.AVGSIZE", "NET.MSGRATE", "PEER.RATE", "DELAY.MIN", "DELAY.MAX", "DELAY.AVG", "DELAY.EXP"})
 	table.SetAutoFormatHeaders(false)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 
@@ -1080,6 +1080,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 		fmt.Sprint(totalMessages),
 		fmt.Sprint(bytefmt.ByteSize(uint64(totalBytes))),
 		fmt.Sprint(bytefmt.ByteSize(uint64(float64(totalBytes) / float64(totalMessages)))),
+		fmt.Sprintf("%.2f/s", float64(totalMessages)/time.Duration(totalDuration).Seconds()),
 		fmt.Sprintf("%v/s", bytefmt.ByteSize(uint64(bps))),
 		fmt.Sprint(time.Duration(minLatency).Truncate(10 * time.Microsecond)),
 		fmt.Sprint(time.Duration(maxLatency).Truncate(10 * time.Microsecond)),
