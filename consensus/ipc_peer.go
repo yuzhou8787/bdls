@@ -25,14 +25,14 @@ func (f fakeAddress) String() string { return string(f) }
 type IPCPeer struct {
 	c *Consensus
 	sync.Mutex
-	latency    time.Duration
-	die        chan struct{}
-	dieOnce    sync.Once
-	msgCount   int64
-	bytesCount int64
-	minLatency time.Duration
-	maxLatency time.Duration
-	allLatency time.Duration
+	latency      time.Duration
+	die          chan struct{}
+	dieOnce      sync.Once
+	msgCount     int64
+	bytesCount   int64
+	minLatency   time.Duration
+	maxLatency   time.Duration
+	totalLatency time.Duration
 }
 
 // NewIPCPeer creates IPC based peer with latency, latency is distributed with
@@ -64,7 +64,7 @@ func (p *IPCPeer) GetBytesCount() int64 {
 	return p.bytesCount
 }
 
-// Propose a state
+// Propose a state, awaiting to be finalized at next height.
 func (p *IPCPeer) Propose(s State) {
 	p.Lock()
 	defer p.Unlock()
@@ -79,10 +79,10 @@ func (p *IPCPeer) GetLatestState() (height uint64, round uint64, data State) {
 }
 
 // GetLatencies return actual generated latency
-func (p *IPCPeer) GetLatencies() (time.Duration, time.Duration, time.Duration) {
+func (p *IPCPeer) GetLatencies() (min time.Duration, max time.Duration, total time.Duration) {
 	p.Lock()
 	defer p.Unlock()
-	return p.minLatency, p.maxLatency, p.allLatency
+	return p.minLatency, p.maxLatency, p.totalLatency
 }
 
 // Send implements Peer.Send
@@ -99,7 +99,7 @@ func (p *IPCPeer) Send(msg []byte) error {
 		if p.maxLatency < delay {
 			p.maxLatency = delay
 		}
-		p.allLatency += delay
+		p.totalLatency += delay
 		p.msgCount++
 		p.bytesCount += int64(len(msg))
 
