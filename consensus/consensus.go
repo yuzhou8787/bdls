@@ -980,18 +980,18 @@ func (c *Consensus) getRound(idx uint64, remove bool) *consensusRound {
 		} else if idx < r.RoundNumber { // higher round
 			// insert a new round entry before this round
 			// to make sure the list is ordered
-			r := newConsensusRound(idx, c)
-			c.rounds.InsertBefore(r, elem)
-			return r
+			newr := newConsensusRound(idx, c)
+			c.rounds.InsertBefore(newr, elem)
+			return newr
 		} else if r.RoundNumber == idx { // found entry
 			return r
 		}
 	}
 
 	// looped to the end, we create and push back
-	r := newConsensusRound(idx, c)
-	c.rounds.PushBack(r)
-	return r
+	newr := newConsensusRound(idx, c)
+	c.rounds.PushBack(newr)
+	return newr
 }
 
 // lockRelease updates locks while entering lock-release status
