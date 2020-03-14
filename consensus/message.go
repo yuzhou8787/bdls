@@ -33,6 +33,7 @@ package consensus
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/json"
@@ -41,14 +42,14 @@ import (
 
 	proto "github.com/golang/protobuf/proto"
 	"github.com/xtaci/bdls/crypto/blake2b"
-	"github.com/xtaci/bdls/crypto/secp256k1"
+	"github.com/xtaci/bdls/crypto/btcec"
 )
 
 // ErrPubKey will be returned if error found while decoding message's public key
 var ErrPubKey = errors.New("incorrect pubkey format")
 
 // default elliptic curve for signing
-var defaultCurve = secp256k1.S256()
+var defaultCurve elliptic.Curve = btcec.S256()
 
 const (
 	// SizeAxis defines bytes size of X-axis or Y-axis in a public key
