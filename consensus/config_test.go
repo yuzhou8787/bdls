@@ -31,7 +31,7 @@ func TestVerifyConfig(t *testing.T) {
 	err = VerifyConfig(config)
 	assert.Equal(t, ErrConfigPrivateKey, err)
 
-	randKey, err := ecdsa.GenerateKey(defaultCurve, rand.Reader)
+	randKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 	assert.Nil(t, err)
 
 	config.PrivateKey = randKey
@@ -39,7 +39,7 @@ func TestVerifyConfig(t *testing.T) {
 	assert.Equal(t, ErrConfigParticipants, err)
 
 	for i := 0; i < ConfigMinimumParticipants; i++ {
-		randKey, err := ecdsa.GenerateKey(defaultCurve, rand.Reader)
+		randKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 		assert.Nil(t, err)
 		config.Participants = append(config.Participants, &randKey.PublicKey)
 	}

@@ -54,7 +54,7 @@ func (c *Consensus) AddParticipant(key *ecdsa.PublicKey) {
 // createConsensus creates a valid consensus object with given height & round and random state
 // the c.particpants[0] will always be the consensus's publickey
 func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.PublicKey) *Consensus {
-	privateKey, err := ecdsa.GenerateKey(defaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 	assert.Nil(t, err)
 
 	// mock data
@@ -87,7 +87,7 @@ func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.
 
 func TestProposeMultipleRoundChanges(t *testing.T) {
 	t.Log("a participant propose multiple <roundchange> in different rounds")
-	privateKey, err := ecdsa.GenerateKey(defaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 	assert.Nil(t, err)
 
 	consensus := createConsensus(t, 1, 0, []*ecdsa.PublicKey{&privateKey.PublicKey})
@@ -130,7 +130,7 @@ func TestProposeMultipleRoundChanges(t *testing.T) {
 }
 
 func TestMultipleCommits(t *testing.T) {
-	privateKey, err := ecdsa.GenerateKey(defaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 	assert.Nil(t, err)
 
 	consensus := createConsensus(t, 0, 0, []*ecdsa.PublicKey{&privateKey.PublicKey})
@@ -140,7 +140,7 @@ func TestMultipleCommits(t *testing.T) {
 	// hack to set current round status
 	// add 20 random participants to prevent from height decide
 	for i := 0; i < 20; i++ {
-		privateKey, err := ecdsa.GenerateKey(defaultCurve, rand.Reader)
+		privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 		assert.Nil(t, err)
 		consensus.AddParticipant(&privateKey.PublicKey)
 	}
@@ -930,7 +930,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 	var participants []*ecdsa.PrivateKey
 	var pubkeys []*ecdsa.PublicKey
 	for i := 0; i < param.numParticipants; i++ {
-		privateKey, err := ecdsa.GenerateKey(defaultCurve, rand.Reader)
+		privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 		if err != nil {
 			t.Fatal(err)
 		}

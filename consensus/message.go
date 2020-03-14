@@ -49,7 +49,7 @@ import (
 var ErrPubKey = errors.New("incorrect pubkey format")
 
 // default elliptic curve for signing
-var defaultCurve elliptic.Curve = btcec.S256()
+var DefaultCurve elliptic.Curve = btcec.S256()
 
 const (
 	// SizeAxis defines bytes size of X-axis or Y-axis in a public key
@@ -211,7 +211,7 @@ func (sp *SignedProto) Verify() bool {
 	hash := sp.Hash()
 	// verify against public key and r, s
 	pubkey := ecdsa.PublicKey{}
-	pubkey.Curve = defaultCurve
+	pubkey.Curve = DefaultCurve
 	pubkey.X = big.NewInt(0).SetBytes(sp.X[:])
 	pubkey.Y = big.NewInt(0).SetBytes(sp.Y[:])
 	return ecdsa.Verify(&pubkey, hash, big.NewInt(0).SetBytes(sp.R), big.NewInt(0).SetBytes(sp.S))

@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/xtaci/bdls/consensus"
 	"github.com/xtaci/bdls/crypto/blake2b"
-	"github.com/xtaci/bdls/crypto/secp256k1"
 )
 
 const (
@@ -23,7 +22,7 @@ const (
 )
 
 func TestFullParticipant(t *testing.T) {
-	curve := secp256k1.S256()
+	curve := consensus.DefaultCurve
 	var agents []*Agent
 	var privateKeys []*ecdsa.PrivateKey
 	var publicKeys []*ecdsa.PublicKey
