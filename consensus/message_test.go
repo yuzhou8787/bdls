@@ -31,7 +31,7 @@ func createRoundChangeMessageState(t *testing.T, height uint64, round uint64, st
 }
 
 //  createRoundChangeMessage generates a random valid <roundchange> message
-func createRoundChangeMessageSigner(t *testing.T, height uint64, round uint64, state State, signer *ecdsa.PrivateKey) (*Message, *SignedProto, *ecdsa.PrivateKey) {
+func createRoundChangeMessageSigner(t testing.TB, height uint64, round uint64, state State, signer *ecdsa.PrivateKey) (*Message, *SignedProto, *ecdsa.PrivateKey) {
 	// <roundchange>
 	rc := new(Message)
 	rc.Type = MessageType_RoundChange
@@ -1066,4 +1066,13 @@ func TestVerifyDecideMessageProofInsufficient(t *testing.T) {
 
 	err := consensus.verifyDecideMessage(m, sp)
 	assert.Equal(t, ErrDecideProofInsufficient, err)
+}
+
+func BenchmarkSecp256k1Verify(b *testing.B) {
+	privateKey, _ := ecdsa.GenerateKey(defaultCurve, rand.Reader)
+
+	for i := 0; i < b.N; i++ {
+		_, sp, _ := createRoundChangeMessageSigner(b, 0, 0, nil, privateKey)
+		sp.Verify()
+	}
 }
