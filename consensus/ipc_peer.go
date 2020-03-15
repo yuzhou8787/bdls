@@ -73,7 +73,6 @@ func NewIPCPeer(c *Consensus, latency time.Duration) *IPCPeer {
 	p.latency = latency
 	p.die = make(chan struct{})
 	p.minLatency = math.MaxInt64
-	p.Update()
 	return p
 }
 
