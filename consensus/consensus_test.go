@@ -997,6 +997,13 @@ func testConsensus(t *testing.T, param *testParam) []string {
 			}
 		}
 
+		// after all connections have established, start updater,
+		// this must be done after connection establishement
+		// to prevent from missing <decide> messages
+		for i := 0; i < len(peers); i++ {
+			peers[i].Update()
+		}
+
 		var wg sync.WaitGroup
 		wg.Add(param.numPeers)
 

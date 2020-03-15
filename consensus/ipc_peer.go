@@ -73,7 +73,7 @@ func NewIPCPeer(c *Consensus, latency time.Duration) *IPCPeer {
 	p.latency = latency
 	p.die = make(chan struct{})
 	p.minLatency = math.MaxInt64
-	p.update()
+	p.Update()
 	return p
 }
 
@@ -148,8 +148,8 @@ func (p *IPCPeer) delay() time.Duration {
 	return time.Duration(0.1*rand.NormFloat64()*float64(p.latency)) + p.latency
 }
 
-// update will call itself perodically
-func (p *IPCPeer) update() {
+// Update will call itself perodically
+func (p *IPCPeer) Update() {
 	p.Lock()
 	defer p.Unlock()
 
@@ -159,7 +159,7 @@ func (p *IPCPeer) update() {
 		if p.c != nil {
 			// call consensus update
 			_ = p.c.Update(time.Now())
-			timer.SystemTimedSched.Put(p.update, time.Now().Add(20*time.Millisecond))
+			timer.SystemTimedSched.Put(p.Update, time.Now().Add(20*time.Millisecond))
 		}
 	}
 }
