@@ -274,8 +274,6 @@ type Consensus struct {
 	rounds       list.List       // all rounds at next height(consensus round in progress)
 	currentRound *consensusRound // current round which has collected >=2t+1 <roundchange>
 
-	lastTimeStamp time.Time // last timestamp provided along with ReceiveMessage() or Update() call
-
 	// timeouts in different stage
 	rcTimeout          time.Time // roundchange status timeout
 	lockTimeout        time.Time // lock status timeout
@@ -333,7 +331,6 @@ func (c *Consensus) init(config *Config) {
 	// setting current state & height
 	c.latestState = config.CurrentState
 	c.latestHeight = config.CurrentHeight
-	c.lastTimeStamp = config.Epoch
 	for k := range config.Participants {
 		c.participants = append(c.participants, newCoordFromPubKey(config.Participants[k]))
 	}
@@ -1074,13 +1071,6 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 		}
 	}()
 
-	// standard reference point-in-time, pending queue will use the same
-	// time as what has passed in. we cannot use now.After() here!!!
-	if now.Before(c.lastTimeStamp) {
-		return ErrConsensusTime
-	}
-	c.lastTimeStamp = now
-
 	// unmarshal signed message
 	signed := new(SignedProto)
 	err := proto.Unmarshal(bts, signed)
@@ -1362,12 +1352,6 @@ func (c *Consensus) Update(now time.Time) error {
 			_ = c.ReceiveMessage(bts, now)
 		}
 	}()
-
-	// a standard reference point-in-time to following if conditions.
-	if now.Before(c.lastTimeStamp) {
-		return ErrConsensusTime
-	}
-	c.lastTimeStamp = now
 
 	// stage switch
 	switch c.currentRound.Stage {

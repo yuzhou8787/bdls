@@ -963,11 +963,13 @@ func testConsensus(t *testing.T, param *testParam) []string {
 		}
 
 		var peers []*IPCPeer
+		// same epoch
+		epoch := time.Now()
 		// create numPeer peers
 		for i := 0; i < param.numPeers; i++ {
 			// initiate config
 			config := new(Config)
-			config.Epoch = time.Now()
+			config.Epoch = epoch
 			config.CurrentState = currentState
 			config.CurrentHeight = currentHeight
 			config.PrivateKey = participants[i] // randomized participants
@@ -1012,44 +1014,42 @@ func testConsensus(t *testing.T, param *testParam) []string {
 			go func(i int) {
 				peer := peers[i]
 				defer wg.Done()
+
+				data := make([]byte, 1024)
+				io.ReadFull(rand.Reader, data)
+				peer.Propose(data)
+
 				for {
-					prev := time.Now()
-					data := make([]byte, 1024)
-					io.ReadFull(rand.Reader, data)
-					peer.Propose(data)
-
-					for {
-						newHeight, newRound, newState := peer.GetLatestState()
-						if newHeight > currentHeight {
-							now := time.Now()
-							atomic.AddInt64(&totalConfirms, 1)
-							atomic.AddInt64(&totalDuration, int64(now.Sub(prev)))
-							// only one peer print the decide
-							if i == 0 {
-								rounds = append(rounds, fmt.Sprint(newRound))
-								h := blake2b.Sum256(newState)
-								t.Logf("%v <decide> at height:%v round:%v hash:%v", now.Format("15:04:05"), newHeight, newRound, hex.EncodeToString(h[:]))
-							}
-
-							// countings
-							atomic.AddInt64(&totalMessages, peer.GetMessageCount())
-							atomic.AddInt64(&totalBytes, peer.GetBytesCount())
-							min, max, all := peer.GetLatencies()
-							if atomic.LoadInt64(&minLatency) > int64(min) {
-								atomic.StoreInt64(&minLatency, int64(min))
-							}
-
-							if atomic.LoadInt64(&maxLatency) < int64(max) {
-								atomic.StoreInt64(&maxLatency, int64(max))
-							}
-
-							atomic.AddInt64(&allLatency, int64(all))
-							return
+					newHeight, newRound, newState := peer.GetLatestState()
+					if newHeight > currentHeight {
+						now := time.Now()
+						atomic.AddInt64(&totalConfirms, 1)
+						atomic.AddInt64(&totalDuration, int64(now.Sub(epoch)))
+						// only one peer print the decide
+						if i == 0 {
+							rounds = append(rounds, fmt.Sprint(newRound))
+							h := blake2b.Sum256(newState)
+							t.Logf("%v <decide> at height:%v round:%v hash:%v", now.Format("15:04:05"), newHeight, newRound, hex.EncodeToString(h[:]))
 						}
 
-						// wait
-						<-time.After(20 * time.Millisecond)
+						// countings
+						atomic.AddInt64(&totalMessages, peer.GetMessageCount())
+						atomic.AddInt64(&totalBytes, peer.GetBytesCount())
+						min, max, all := peer.GetLatencies()
+						if atomic.LoadInt64(&minLatency) > int64(min) {
+							atomic.StoreInt64(&minLatency, int64(min))
+						}
+
+						if atomic.LoadInt64(&maxLatency) < int64(max) {
+							atomic.StoreInt64(&maxLatency, int64(max))
+						}
+
+						atomic.AddInt64(&allLatency, int64(all))
+						return
 					}
+
+					// wait
+					<-time.After(20 * time.Millisecond)
 				}
 			}(k)
 		}

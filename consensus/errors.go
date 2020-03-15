@@ -33,8 +33,6 @@ package consensus
 import "errors"
 
 var (
-	ErrConsensusTime = errors.New("the time passed in is not monolithic increasing")
-
 	// Config Related
 	ErrConfigEpoch         = errors.New("Config.Epoch is nil")
 	ErrConfigStateNil      = errors.New("Config.CurrentState is nil")
