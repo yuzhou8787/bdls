@@ -144,11 +144,11 @@ func (r *consensusRound) AddRoundChange(sp *SignedProto, m *Message) bool {
 	return true
 }
 
-// FindRoundChange will try find a <roundchange> from the given participant,
+// FindRoundChange will try find a <roundchange> from a given participant,
 // and returns index, -1 if not found
-func (r *consensusRound) FindRoundChange(sp *SignedProto) int {
+func (r *consensusRound) FindRoundChange(X PubKeyAxis, Y PubKeyAxis) int {
 	for k := range r.roundChanges {
-		if r.roundChanges[k].Signed.X == sp.X && r.roundChanges[k].Signed.Y == sp.Y {
+		if r.roundChanges[k].Signed.X == X && r.roundChanges[k].Signed.Y == Y {
 			return k
 		}
 	}
@@ -1118,7 +1118,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 		for elem := c.rounds.Front(); elem != nil; elem = next {
 			next = elem.Next()
 			cr := elem.Value.(*consensusRound)
-			if idx := cr.FindRoundChange(signed); idx != -1 { // located!
+			if idx := cr.FindRoundChange(signed.X, signed.Y); idx != -1 { // located!
 				if m.Round == c.currentRound.RoundNumber { // don't remove now!
 					continue
 				} else if cr.RoundNumber > m.Round {
