@@ -1166,7 +1166,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 				c.lockTimeout = time.Time{}
 
 				leaderKey := c.roundLeader(m.Round)
-				if leaderKey.Equal(signed.X, signed.Y) {
+				if leaderKey == c.coordinate {
 					// leader's <roundchange> collection timeout
 					c.lockTimeout = now.Add(c.collectDuration(m.Round))
 				} else {
