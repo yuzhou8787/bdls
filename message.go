@@ -208,11 +208,17 @@ func (sp *SignedProto) Sign(m *Message, privateKey *ecdsa.PrivateKey) {
 
 // Verify the signature of this signed message
 func (sp *SignedProto) Verify() bool {
+	var X, Y, R, S big.Int
 	hash := sp.Hash()
 	// verify against public key and r, s
 	pubkey := ecdsa.PublicKey{}
 	pubkey.Curve = DefaultCurve
-	pubkey.X = big.NewInt(0).SetBytes(sp.X[:])
-	pubkey.Y = big.NewInt(0).SetBytes(sp.Y[:])
-	return ecdsa.Verify(&pubkey, hash, big.NewInt(0).SetBytes(sp.R), big.NewInt(0).SetBytes(sp.S))
+	pubkey.X = &X
+	pubkey.Y = &Y
+	X.SetBytes(sp.X[:])
+	Y.SetBytes(sp.Y[:])
+	R.SetBytes(sp.R[:])
+	S.SetBytes(sp.S[:])
+
+	return ecdsa.Verify(&pubkey, hash, &R, &S)
 }
