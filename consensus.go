@@ -1298,8 +1298,8 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 				return err
 			}
 
-			// verify can guarantee that the message is to currentRound, so we
-			// only need to handle current round.
+			// verifyCommitMessage can guarantee that the message is to currentRound,
+			// so we're safe to process in current round.
 			if c.currentRound.AddCommit(signed, m) {
 				// NOTE: we proceed the following only when AddCommit returns true.
 				// NumCommitted will only return commits with locked B'
