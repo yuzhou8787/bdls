@@ -1163,8 +1163,6 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 
 				// leader of this round MUST wait on collectDuration,
 				// to decide to broadcast <lock> or <select>.
-				c.lockTimeout = time.Time{}
-
 				leaderKey := c.roundLeader(m.Round)
 				if leaderKey == c.coordinate {
 					// leader's <roundchange> collection timeout
