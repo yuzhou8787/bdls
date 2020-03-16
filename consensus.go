@@ -971,15 +971,19 @@ func (c *Consensus) propagate(bts []byte) {
 }
 
 // getRound returns the consensus round with given idx, create one if not exists
-// if remove has set, all lower rounds will be cleared
-func (c *Consensus) getRound(idx uint64, remove bool) *consensusRound {
+// if purgeLower has set, all lower rounds will be cleared
+func (c *Consensus) getRound(idx uint64, purgeLower bool) *consensusRound {
 	var next *list.Element
 	for elem := c.rounds.Front(); elem != nil; elem = next {
 		next = elem.Next()
 		r := elem.Value.(*consensusRound)
 
 		if r.RoundNumber < idx { // lower round
-			c.rounds.Remove(elem)
+			// if remove flag has set, remove this round safely,
+			// usually used by switchRound
+			if purgeLower {
+				c.rounds.Remove(elem)
+			}
 			continue
 		} else if idx < r.RoundNumber { // higher round
 			// insert a new round entry before this round
