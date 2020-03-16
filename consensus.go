@@ -48,7 +48,7 @@ const (
 	ProtocolVersion = 1
 	// DefaultConsensusLatency is the default propagation latency setting for
 	// consensus protocol, user can adjust this setting via SetLatency()
-	DefaultConsensusLatency = 150 * time.Millisecond
+	DefaultConsensusLatency = 300 * time.Millisecond
 )
 
 type (
