@@ -47,7 +47,8 @@ const (
 	// version wil be sent along with messages for protocol upgrading.
 	ProtocolVersion = 1
 	// DefaultConsensusLatency is the default propagation latency setting for
-	// consensus protocol, user can adjust this setting via SetLatency()
+	// consensus protocol, user can adjust consensus object's latency setting
+	// via Consensus.SetLatency()
 	DefaultConsensusLatency = 300 * time.Millisecond
 )
 
@@ -59,7 +60,8 @@ type (
 )
 
 // DefaultHash is the system default hash function, if a hash function has
-// not specified in config, this one will be used to hash and identify a state.
+// not specified in config, this one will be used to hash and uniquely
+// identifies a state.
 func DefaultHash(s State) StateHash { return blake2b.Sum256(s) }
 
 type (
@@ -76,8 +78,8 @@ const (
 	stageLockRelease
 )
 
-// messageTuple contains a decoded incoming message, and it's raw encoding
-// with signature.
+// messageTuple contains a state hash, a decoded incoming message
+// and it's encoded raw message with a signature.
 type messageTuple struct {
 	StateHash StateHash    // computed while adding
 	Message   *Message     // the decoded message
@@ -90,11 +92,16 @@ type tupleSorter struct {
 	by     func(t1, t2 *messageTuple) bool
 }
 
-func (s *tupleSorter) Len() int           { return len(s.tuples) }
-func (s *tupleSorter) Swap(i, j int)      { s.tuples[i], s.tuples[j] = s.tuples[j], s.tuples[i] }
+// Len implements sort.Interface
+func (s *tupleSorter) Len() int { return len(s.tuples) }
+
+// Swap implements sort.Interface
+func (s *tupleSorter) Swap(i, j int) { s.tuples[i], s.tuples[j] = s.tuples[j], s.tuples[i] }
+
+// Less implements sort.Interface
 func (s *tupleSorter) Less(i, j int) bool { return s.by(&s.tuples[i], &s.tuples[j]) }
 
-// consensusRound includes all exchanging messages in a round.
+// consensusRound maintains exchanging messages in a round.
 type consensusRound struct {
 	c               *Consensus     // the consensus object belongs to
 	Stage           consensusStage // indicates current status in consensus automata
@@ -104,10 +111,10 @@ type consensusRound struct {
 	RoundChangeSent bool           // mark if the <roundchange> message of this round has sent
 	CommitSent      bool           // mark if this round has sent commit message once
 
-	// NOTE: we MUST keep the original message, re-marshalling message may
-	// result in different bits layout, and different hash of course.
-	roundChanges []messageTuple // stores <roundchange> messages of this round
-	commits      []messageTuple // stores <commit> messages of this round
+	// NOTE: we MUST keep the original message, to re-marshal the message may
+	// result in different BITS LAYOUT, and different hash of course.
+	roundChanges []messageTuple // stores <roundchange> message tuples of this round
+	commits      []messageTuple // stores <commit> message tuples of this round
 
 	// track current max proposed state in <roundchange>,  we don't have to compute this for
 	// a non-leader participant, or if there's no more than 2t+1 messages for leader.
