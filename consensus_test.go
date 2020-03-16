@@ -562,6 +562,18 @@ func TestConsensusFull80Participants(t *testing.T) {
 
 	beginTest(t, params)
 }
+func TestConsensusOnlyFull100Participants(t *testing.T) {
+	var params = []testParam{
+		{
+			numPeers:        100,
+			numParticipants: 100,
+			stopHeight:      5,
+			latency:         100 * time.Millisecond,
+			expectedLatency: 100 * time.Millisecond,
+		},
+	}
+	beginTest(t, params)
+}
 
 func TestConsensusFull100Participants(t *testing.T) {
 	var params = []testParam{
@@ -993,7 +1005,8 @@ func testConsensus(t *testing.T, param *testParam) []string {
 		for i := 0; i < len(peers); i++ {
 			for j := 0; j < len(peers); j++ {
 				if i != j {
-					peers[i].c.AddPeer(peers[j])
+					ok := peers[i].c.AddPeer(peers[j])
+					assert.True(t, ok)
 					numConns++
 				}
 			}

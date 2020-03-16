@@ -155,11 +155,9 @@ func (p *IPCPeer) Update() {
 	select {
 	case <-p.die:
 	default:
-		if p.c != nil {
-			// call consensus update
-			_ = p.c.Update(time.Now())
-			timer.SystemTimedSched.Put(p.Update, time.Now().Add(20*time.Millisecond))
-		}
+		// call consensus update
+		_ = p.c.Update(time.Now())
+		timer.SystemTimedSched.Put(p.Update, time.Now().Add(20*time.Millisecond))
 	}
 }
 

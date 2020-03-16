@@ -506,7 +506,7 @@ func (c *Consensus) verifyLockMessage(m *Message, signed *SignedProto) error {
 	}
 
 	// make sure this message has been signed by the leader
-	leaderKey := c.currentLeader()
+	leaderKey := c.roundLeader(m.Round)
 	if !leaderKey.Equal(signed.X, signed.Y) {
 		return ErrLockNotSignedByLeader
 	}
@@ -611,7 +611,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 	}
 
 	// make sure this message has been signed by the leader
-	leaderKey := c.currentLeader()
+	leaderKey := c.roundLeader(m.Round)
 	if !leaderKey.Equal(signed.X, signed.Y) {
 		return ErrSelectNotSignedByLeader
 	}
@@ -748,7 +748,7 @@ func (c *Consensus) verifyDecideMessage(m *Message, signed *SignedProto) error {
 	}
 
 	// make sure this message has been signed by the leader
-	leaderKey := c.currentLeader()
+	leaderKey := c.roundLeader(m.Round)
 	if !leaderKey.Equal(signed.X, signed.Y) {
 		return ErrDecideNotSignedByLeader
 	}
@@ -1013,13 +1013,13 @@ func (c *Consensus) lockRelease() {
 // and all lower rounds will be cleared while switching.
 func (c *Consensus) switchRound(round uint64) { c.currentRound = c.getRound(round, true) }
 
-// currentLeader returns current leader's coordinate
-func (c *Consensus) currentLeader() Coordinate {
+// roundLeader returns leader's coordinate for a given round
+func (c *Consensus) roundLeader(round uint64) Coordinate {
 	// NOTE: fixed leader is for testing
 	if c.fixedLeader != nil {
 		return *c.fixedLeader
 	}
-	return c.participants[int(c.currentRound.RoundNumber)%len(c.participants)]
+	return c.participants[int(round)%len(c.participants)]
 }
 
 // heightSync changes current height to the given height with state
@@ -1165,14 +1165,12 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 				// to decide to broadcast <lock> or <select>.
 				c.lockTimeout = time.Time{}
 
-				leaderKey := c.currentLeader()
+				leaderKey := c.roundLeader(m.Round)
 				if leaderKey.Equal(signed.X, signed.Y) {
 					// leader's <roundchange> collection timeout
 					c.lockTimeout = now.Add(c.collectDuration(m.Round))
-				}
-
-				// non-leader's lockTimeout
-				if c.lockTimeout.IsZero() {
+				} else {
+					// non-leader's lockTimeout
 					c.lockTimeout = now.Add(c.lockDuration(m.Round))
 				}
 				// set stage
@@ -1182,7 +1180,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 			// for the leader, who's current round has at least 2*t+1 <roundchange>,
 			// we will track max proposed state for each valid added <roundchange>
 			if round == c.currentRound && round.NumRoundChanges() >= 2*c.t()+1 {
-				leaderKey := c.currentLeader()
+				leaderKey := c.roundLeader(m.Round)
 				if leaderKey == c.coordinate {
 					round.MaxProposedState, round.MaxProposedCount = round.GetMaxProposed()
 				}
@@ -1282,7 +1280,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 	case MessageType_Commit:
 		// leader process commits message from all participants,
 		// check to see if I'm the leader of this round to process this message.
-		leaderKey := c.currentLeader()
+		leaderKey := c.roundLeader(m.Round)
 		if leaderKey == c.coordinate {
 			// verify commit message.
 			// NOTE: leader only accept commits for current height & round.
@@ -1370,7 +1368,7 @@ func (c *Consensus) Update(now time.Time) error {
 		}
 		// leader's collection, we perform periodically check for <lock> or <select>
 		// check to see if I'm the leader of this round to perform collect timeout
-		leaderKey := c.currentLeader()
+		leaderKey := c.roundLeader(c.currentRound.RoundNumber)
 		if leaderKey == c.coordinate {
 			// check if we have enough 2t+1 <roundchange> to lock B',
 			// which B' != NULL
