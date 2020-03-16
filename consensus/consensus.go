@@ -299,7 +299,7 @@ type Consensus struct {
 	latency time.Duration
 
 	// all connected peers
-	peers []Peer
+	peers []PeerInterface
 
 	// participants is the consensus group, current leader is r % quorum
 	participants []Coordinate
@@ -1450,7 +1450,7 @@ func (c *Consensus) SetLatency(latency time.Duration) { c.latency = latency }
 
 // AddPeer adds a peer to consensus for message delivery, a peer is
 // identified by it's address.
-func (c *Consensus) AddPeer(p Peer) bool {
+func (c *Consensus) AddPeer(p PeerInterface) bool {
 	for k := range c.peers {
 		if p.RemoteAddr().String() == c.peers[k].RemoteAddr().String() {
 			return false

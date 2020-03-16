@@ -34,8 +34,8 @@ import (
 	"net"
 )
 
-// Peer is a channel for consensus to send message to the peer
-type Peer interface {
+// PeerInterface is a channel for consensus to send message to the peer
+type PeerInterface interface {
 	// returns remote addr
 	RemoteAddr() net.Addr
 	// Send a msg to this peer
