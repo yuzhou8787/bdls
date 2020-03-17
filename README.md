@@ -229,6 +229,7 @@ Case 12: 50 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s incor
 ## Specification
 
 1. Consensus messages are specified in [message.proto](message.proto), users of this library can encapsulate this message in a carrier message, like gossip in TCP.
+2. Consensus algorithm is NOT thread-safe, it MUST be protected by some synchronization mechanism, like `sync.Mutex` or `chan` + `goroutine`.
 
 ## Usage
 
