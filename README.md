@@ -16,10 +16,10 @@ should take care of their own synchronization mechanism.
 
 ## Features
 
-1. Pure algorithm implementation in deterministic and predictable behavior.
-2. Well-tested on various platform.
-3. Auto back-off under heavy payload, guaranteed finalization.
-4. Easy to use in Blockchain consensus or non-Blockchain consensus, like database replication.
+1. Pure algorithm implementation in deterministic and predictable behavior, see [DFA](https://en.wikipedia.org/wiki/Deterministic_finite_automaton) for more.
+2. Well-tested on various platforms.
+3. Auto back-off under heavy payload, guaranteed finalization(worst case gurantee).
+4. Easy to use in Blockchain consensus or non-Blockchain consensus, like [WAL replication](https://en.wikipedia.org/wiki/Replication_(computing)#Database_replication) in database.
 5. Builtin network emulation for various network latency.
 
 ## Documentation
