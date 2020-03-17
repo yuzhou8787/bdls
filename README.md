@@ -1,3 +1,21 @@
+[![GoDoc][1]][2] [![License][3]][4] [![Build Status][5]][6] [![Go Report Card][7]][8] [![Coverage Statusd][9]][10] [![Sourcegraph][11]][12]
+
+<img src="mux.jpg" alt="bdls" height="120px" /> 
+
+[1]: https://godoc.org/github.com/Sperax/bdls?status.svg
+[2]: https://pkg.go.dev/github.com/Sperax/bdls
+[3]: https://img.shields.io/github/license/Sperax/bdls
+[4]: LICENSE
+[5]: https://travis-ci.org/Sperax/bdls.svg?branch=master
+[6]: https://travis-ci.org/Sperax/bdls
+[7]: https://goreportcard.com/badge/github.com/Sperax/bdls
+[8]: https://goreportcard.com/report/github.com/Sperax/bdls
+[9]: https://codecov.io/gh/Sperax/bdls/branch/master/graph/badge.svg
+[10]: https://codecov.io/gh/Sperax/bdls
+[11]: https://sourcegraph.com/github.com/Sperax/bdls/-/badge.svg
+[12]: https://sourcegraph.com/github.com/Sperax/bdls?badge
+
+
 # BDLS Consensus
 
 ## Introduction
