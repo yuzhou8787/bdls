@@ -54,7 +54,10 @@ fpu             : yes
 fpu_exception   : yes
 cpuid level     : 13
 wp              : yes
-flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm rep_good nopl cpuid extd_apicid pni pclmulqdq ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext ssbd ibpb vmmcall fsgsbase bmi1 avx2 smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 xsaves clzero xsaveerptr virt_ssbd arat
+flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext
+fxsr_opt pdpe1gb rdtscp lm rep_good nopl cpuid extd_apicid pni pclmulqdq ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c 
+rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext ssbd ibpb vmmcall fsgsbase bmi1 avx2 
+smep bmi2 rdseed adx smap clflushopt sha_ni xsaveopt xsavec xgetbv1 xsaves clzero xsaveerptr virt_ssbd arat
 bugs            : sysret_ss_attrs null_seg spectre_v1 spectre_v2 spec_store_bypass
 bogomips        : 7386.22
 TLB size        : 2560 4K pages
@@ -101,7 +104,6 @@ Case 1: 20 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly 
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 2: 30 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -113,7 +115,6 @@ Case 2: 30 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly 
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 3: 50 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -125,7 +126,6 @@ Case 3: 50 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly 
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 4: 80 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -137,7 +137,6 @@ Case 4: 80 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly 
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 5: 100 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -150,7 +149,6 @@ Case 5: 100 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s correctly
 
 
 Case 6: 20 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -162,7 +160,6 @@ Case 6: 20 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correc
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 7: 30 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -174,7 +171,6 @@ Case 7: 30 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correc
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 8: 50 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -186,7 +182,6 @@ Case 8: 50 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correc
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 9: 80 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -198,7 +193,6 @@ Case 9: 80 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correc
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 10: 100 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s correctly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -210,7 +204,6 @@ Case 10: 100 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s corr
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 11: 50 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s incorrectly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -222,7 +215,6 @@ Case 11: 50 Fully Connected Participants in 100ms,200ms,300ms,500ms,1s incorrect
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 
 Case 12: 50 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s incorrectly set expected delay
-
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
 | DECIDE.AVG | DECIDE.ROUNDS | PEER.NUM | PJ.NUM | NET.MSGS | NET.BYTES | MSG.AVGSIZE | NET.MSGRATE | PEER.RATE | DELAY.MIN | DELAY.MAX | DELAY.AVG | DELAY.EXP |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
@@ -232,10 +224,7 @@ Case 12: 50 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s incor
 | 10.46s     | 1;3;2;2;3     | 33       | 50     | 44832    | 67.9M     | 1.6K        | 25.97/s     | 39.9K/s   | 243.1ms   | 697.25ms  | 500.03ms  | 250ms     |
 | 15.78s     | 3;1;1;1;2     | 33       | 50     | 38496    | 60.8M     | 1.6K        | 14.78/s     | 23.6K/s   | 531.72ms  | 1.39627s  | 1.00002s  | 500ms     |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
-
 ```
-
-
 
 ## Specification
 
