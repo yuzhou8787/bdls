@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// init will listen for 6060 while debugging
 func init() {
 	go func() {
 		log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
@@ -85,6 +86,7 @@ func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.
 	return consensus
 }
 
+// TestProposeMultipleRoundChanges for OOM attack
 func TestProposeMultipleRoundChanges(t *testing.T) {
 	t.Log("a participant propose multiple <roundchange> in different rounds")
 	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
