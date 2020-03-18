@@ -40,9 +40,9 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/Sperax/bdls/crypto/blake2b"
+	"github.com/Sperax/bdls/crypto/btcec"
 	proto "github.com/golang/protobuf/proto"
-	"github.com/xtaci/bdls/crypto/blake2b"
-	"github.com/xtaci/bdls/crypto/btcec"
 )
 
 // ErrPubKey will be returned if error found while decoding message's public key

@@ -39,7 +39,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/xtaci/bdls/timer"
+	"github.com/Sperax/bdls/timer"
 )
 
 // fake address for IPCPeer

@@ -38,8 +38,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/Sperax/bdls/crypto/blake2b"
 	proto "github.com/golang/protobuf/proto"
-	"github.com/xtaci/bdls/crypto/blake2b"
 )
 
 const (
