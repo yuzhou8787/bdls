@@ -1,7 +1,7 @@
 [![GoDoc][1]][2] [![License][3]][4] [![Build Status][5]][6] [![Go Report Card][7]][8] [![Coverage Statusd][9]][10] [![Sourcegraph][11]][12]
 
 [1]: https://godoc.org/github.com/Sperax/bdls?status.svg
-[2]: https://pkg.go.dev/github.com/Sperax/bdls
+[2]: https://godoc.org/github.com/Sperax/bdls
 [3]: https://img.shields.io/github/license/Sperax/bdls
 [4]: LICENSE
 [5]: https://travis-ci.org/Sperax/bdls.svg?branch=master
