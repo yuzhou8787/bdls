@@ -45,7 +45,7 @@ the correctness of program implementation can be proved with proper test cases.
 
 For complete documentation, see the associated [Godoc](https://pkg.go.dev/github.com/Sperax/bdls).
 
-## Benchmark
+## Protocol Performance
 
 ```
 DATE: 2020/03/18
@@ -56,7 +56,7 @@ CPU: AMD Ryzen 7 2700X Eight-Core Processor
 TERMINOLOGY: 
 
 DECIDE.AVG = Average finalization time for each height.
-DECIDE.ROUNDS = The rounds where a decide has made.
+DECIDE.ROUNDS = The rounds where decides has made.
 PEER.NUM = Actual participantion.
 PJ.NUM = Participants(Quorum) 
 NET.MSGS = Total network number of messages exchanged in all heights.

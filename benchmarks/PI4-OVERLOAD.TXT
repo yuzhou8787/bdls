@@ -9,7 +9,7 @@ TESTING PURPOSE: CONVERGENCE TEST FOR BDLS CONSENSUS ALGORITHM UNDER HEAVY LOAD.
 TERMINOLOGY: 
 
 DECIDE.AVG = Average finalization time for each height.
-DECIDE.ROUNDS = The rounds where a decide has made.
+DECIDE.ROUNDS = The rounds where decides has made.
 PEER.NUM = Actual participantion.
 PJ.NUM = Participants(Quorum) 
 NET.MSGS = Total network number of messages exchanged in all heights.
