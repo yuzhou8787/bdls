@@ -37,10 +37,10 @@ As it's a pure algorithm implementation, it can be integrated into existing proj
 ## Features
 
 1. Pure algorithm implementation in deterministic and predictable behavior, see [DFA](https://en.wikipedia.org/wiki/Deterministic_finite_automaton) for more.
-2. Well-tested on various platforms.
+2. Well-tested on various platforms and complicated cases.
 3. Auto back-off under heavy payload, guaranteed finalization(worst case gurantee).
 4. Easy to use in Blockchain consensus or non-Blockchain consensus, like [WAL replication](https://en.wikipedia.org/wiki/Replication_(computing)#Database_replication) in database.
-5. Builtin network emulation for various network latency.
+5. Builtin network emulation for various network latency and statistics.
 
 ## Documentation
 
