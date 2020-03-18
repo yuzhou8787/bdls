@@ -30,7 +30,7 @@ For this library, to make the runtime behavior of consensus algorithm predictabl
 y = f(x, t), where 'x' is the message it received, and 't' is the time while being called,
   then'y' is the deterministic status of consensus after 'x' and 't' applied to 'f',
 it has been designed in a deterministic scheme, without parallel computing, networking,
-the correctness of program implementation can be proved with prroper test cases.
+the correctness of program implementation can be proved with proper test cases.
 
 
 ## Features
