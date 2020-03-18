@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 syntax = "proto3";
-package consensus;
+package bdls;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 

@@ -1,4 +1,4 @@
-package consensus
+package bdls
 
 import (
 	"crypto/ecdsa"
