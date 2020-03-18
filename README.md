@@ -17,10 +17,10 @@
 
 ## Introduction
 
-SperaxBFT is an innovative BFT consensus algorithm that features safety and liveness by
+BDLS is an innovative BFT consensus algorithm that features safety and liveness by
 presenting a mathematically proven secure BFT protocol resilient in open networks such as
-the Internet. With SperaxBFT, we invented a new random beacon to ensure verifiable
-unpredictability and fairness of validators. More importantly, SperaxBFT overcomes many
+the Internet. With BDLS, we invented a new random beacon to ensure verifiable
+unpredictability and fairness of validators. More importantly, BDLS overcomes many
 problems, such as DoS attacks, as well as the deadlock problem caused by unreliable
 p2p/broadcast channels. These problems are all very relevant to existing realistic open
 network scenarios, and are the focus of extensive work in improving Internet security, but it
@@ -38,8 +38,8 @@ the correctness of program implementation can be proved with proper test cases.
 1. Pure algorithm implementation in deterministic and predictable behavior, easily to be integrated into existing projects, see [DFA](https://en.wikipedia.org/wiki/Deterministic_finite_automaton) for more.
 2. Well-tested on various platforms with complicated cases.
 3. Auto back-off under heavy payload, guaranteed finalization(worst case gurantee).
-4. Easy to use in Blockchain consensus or non-Blockchain consensus, like [WAL replication](https://en.wikipedia.org/wiki/Replication_(computing)#Database_replication) in database.
-5. Builtin network emulation for various network latency and statistics.
+4. Easily to be integrated into Blockchain & non-Blockchain consensus, like [WAL replication](https://en.wikipedia.org/wiki/Replication_(computing)#Database_replication) in database.
+5. Builtin network emulation for various network latency with comprehensivestatistics.
 
 ## Documentation
 
