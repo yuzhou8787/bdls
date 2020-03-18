@@ -144,7 +144,7 @@ func (r *consensusRound) AddRoundChange(sp *SignedProto, m *Message) bool {
 	return true
 }
 
-// FindRoundChange will try find a <roundchange> from a given participant,
+// FindRoundChange will try to find a <roundchange> from a given participant,
 // and returns index, -1 if not found
 func (r *consensusRound) FindRoundChange(X PubKeyAxis, Y PubKeyAxis) int {
 	for k := range r.roundChanges {

@@ -17,17 +17,22 @@
 
 ## Introduction
 
-This library implements Sperax Byzantine Fault Tolerance in Partially Connected Asynchronous
-Networks based on https://eprint.iacr.org/2019/1460.pdf.
+SperaxBFT is an innovative BFT consensus algorithm that features safety and liveness by
+presenting a mathematically proven secure BFT protocol resilient in open networks such as
+the Internet. With SperaxBFT, we invented a new random beacon to ensure verifiable
+unpredictability and fairness of validators. More importantly, SperaxBFT overcomes many
+problems, such as DoS attacks, as well as the deadlock problem caused by unreliable
+p2p/broadcast channels. These problems are all very relevant to existing realistic open
+network scenarios, and are the focus of extensive work in improving Internet security, but it
+is an area largely ignored by most in mainstream BFT protocol design.
 
-To make the runtime behavior of consensus algorithm predictable, as a function:
+For this library, to make the runtime behavior of consensus algorithm predictable as function:
 y = f(x, t), where 'x' is the message it received, and 't' is the time while being called,
-and 'y' is the deterministic status of consensus after 'x' and 't' applied to 'f',
-this library has been designed in a deterministic scheme, without parallel
-computing, networking, and current time is a parameter to this library.
+  then'y' is the deterministic status of consensus after 'x' and 't' applied to 'f',
+it has been designed in a deterministic scheme, without parallel computing, networking,
+the correctness of program implementation can be proved with prroper test cases.
 
-As it's a pure algorithm implementation, it's not thread-safe! Users of this library
-should take care of their own synchronization mechanism.
+As it's a pure algorithm implementation, it can be integrated into existing projects easily.
 
 ## Features
 
@@ -206,7 +211,7 @@ See also overload benchmark: [PI4-OVERLOAD.TXT](benchmarks/PI4-OVERLOAD.TXT)
 ## Specification
 
 1. Consensus messages are specified in [message.proto](message.proto), users of this library can encapsulate this message in a carrier message, like gossip in TCP.
-2. Consensus algorithm is NOT thread-safe, it MUST be protected by some synchronization mechanism, like `sync.Mutex` or `chan` + `goroutine`.
+2. Consensus algorithm is **NOT** thread-safe, it **MUST** be protected by some synchronization mechanism, like `sync.Mutex` or `chan` + `goroutine`.
 
 ## Usage
 
