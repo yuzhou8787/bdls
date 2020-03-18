@@ -9,7 +9,7 @@ install:
     - go get github.com/Sperax/bdls/
 
 script:
-    - go test -v -coverprofile=coverage.txt -covermode=atomic -timeout 12h -run "(Verify)|(Full50)"
+    - go test -v -coverprofile=coverage.txt -covermode=atomic -timeout 12h -run "(Verify)|(Full50)|(Partial50)"
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)
