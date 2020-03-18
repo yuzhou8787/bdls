@@ -1,49 +1,3 @@
-[![GoDoc][1]][2] [![License][3]][4] [![Build Status][5]][6] [![Go Report Card][7]][8] [![Coverage Statusd][9]][10] [![Sourcegraph][11]][12]
-
-[1]: https://godoc.org/github.com/Sperax/bdls?status.svg
-[2]: https://pkg.go.dev/github.com/Sperax/bdls
-[3]: https://img.shields.io/github/license/Sperax/bdls
-[4]: LICENSE
-[5]: https://travis-ci.org/Sperax/bdls.svg?branch=master
-[6]: https://travis-ci.org/Sperax/bdls
-[7]: https://goreportcard.com/badge/github.com/Sperax/bdls
-[8]: https://goreportcard.com/report/github.com/Sperax/bdls
-[9]: https://codecov.io/gh/Sperax/bdls/branch/master/graph/badge.svg
-[10]: https://codecov.io/gh/Sperax/bdls
-[11]: https://sourcegraph.com/github.com/Sperax/bdls/-/badge.svg
-[12]: https://sourcegraph.com/github.com/Sperax/bdls?badge
-
-# BDLS Consensus
-
-## Introduction
-
-This library implements Sperax Byzantine Fault Tolerance in Partially Connected Asynchronous
-Networks based on https://eprint.iacr.org/2019/1460.pdf.
-
-To make the runtime behavior of consensus algorithm predictable, as a function:
-y = f(x, t), where 'x' is the message it received, and 't' is the time while being called,
-and 'y' is the deterministic status of consensus after 'x' and 't' applied to 'f',
-this library has been designed in a deterministic scheme, without parallel
-computing, networking, and current time is a parameter to this library.
-
-As it's a pure algorithm implementation, it's not thread-safe! Users of this library
-should take care of their own synchronization mechanism.
-
-## Features
-
-1. Pure algorithm implementation in deterministic and predictable behavior, see [DFA](https://en.wikipedia.org/wiki/Deterministic_finite_automaton) for more.
-2. Well-tested on various platforms.
-3. Auto back-off under heavy payload, guaranteed finalization(worst case gurantee).
-4. Easy to use in Blockchain consensus or non-Blockchain consensus, like [WAL replication](https://en.wikipedia.org/wiki/Replication_(computing)#Database_replication) in database.
-5. Builtin network emulation for various network latency.
-
-## Documentation
-
-For complete documentation, see the associated [Godoc](https://pkg.go.dev/github.com/Sperax/bdls).
-
-## Benchmark
-
-```
 DATE: 2020/03/18
 OS: Linux 4.19.84-microsoft-standard #1 SMP Wed Nov 13 11:44:37 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
 MEM: 64GB
@@ -199,20 +153,3 @@ Case 12: 50 Partially Connected Participants in 100ms,200ms,300ms,500ms,1s incor
 | 8.04s      | 2;1;1;3;1     | 33       | 50     | 38497    | 60.9M     | 1.6K        | 28.99/s     | 46.3K/s   | 297.08ms  | 699.25ms  | 499.54ms  | 250ms     |
 | 18.06s     | 1;2;3;2;1     | 33       | 50     | 40608    | 63.2M     | 1.6K        | 13.63/s     | 21.4K/s   | 595.42ms  | 1.45499s  | 1.00061s  | 500ms     |
 +------------+---------------+----------+--------+----------+-----------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+
-```
-
-See also overload benchmark: [PI4-OVERLOAD.TXT](benchmarks/PI4-OVERLOAD.TXT)
-
-## Specification
-
-1. Consensus messages are specified in [message.proto](message.proto), users of this library can encapsulate this message in a carrier message, like gossip in TCP.
-2. Consensus algorithm is NOT thread-safe, it MUST be protected by some synchronization mechanism, like `sync.Mutex` or `chan` + `goroutine`.
-
-## Usage
-
-1. A testing peer -- [ipc_peer.go](ipc_peer.go)
-2. A testing tcp node
-
-## Status
-
-Alpha
