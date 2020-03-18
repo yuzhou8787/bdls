@@ -32,12 +32,11 @@ y = f(x, t), where 'x' is the message it received, and 't' is the time while bei
 it has been designed in a deterministic scheme, without parallel computing, networking,
 the correctness of program implementation can be proved with prroper test cases.
 
-As it's a pure algorithm implementation, it can be integrated into existing projects easily.
 
 ## Features
 
-1. Pure algorithm implementation in deterministic and predictable behavior, see [DFA](https://en.wikipedia.org/wiki/Deterministic_finite_automaton) for more.
-2. Well-tested on various platforms and complicated cases.
+1. Pure algorithm implementation in deterministic and predictable behavior, easily to be integrated into existing projects, see [DFA](https://en.wikipedia.org/wiki/Deterministic_finite_automaton) for more.
+2. Well-tested on various platforms with complicated cases.
 3. Auto back-off under heavy payload, guaranteed finalization(worst case gurantee).
 4. Easy to use in Blockchain consensus or non-Blockchain consensus, like [WAL replication](https://en.wikipedia.org/wiki/Replication_(computing)#Database_replication) in database.
 5. Builtin network emulation for various network latency and statistics.
