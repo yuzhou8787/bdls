@@ -154,7 +154,7 @@ func createSelectMessage(t *testing.T, numProofs int, height uint64, round uint6
 			m.State = randstate
 		}
 
-		// the comparision function, to make sure m.State is valid
+		// the comparison function, to make sure m.State is valid
 		if bytes.Compare(m.State, randstate) < 0 {
 			m.State = randstate
 		}

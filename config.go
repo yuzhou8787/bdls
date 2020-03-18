@@ -55,8 +55,8 @@ type Config struct {
 
 	// StateCompare is a function from user to compare states,
 	// The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
-	// Ususally this would be block header in blockchain, or replication log in database,
-	// users should check fields in block header to make comparsion.
+	// Usually this would be block header in blockchain, or replication log in database,
+	// users should check fields in block header to make comparison.
 	StateCompare func(a State, b State) int
 
 	// StateValidate is a function from user to validate the integrity of

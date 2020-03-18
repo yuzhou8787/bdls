@@ -1161,7 +1161,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 			// NOTE: lock stage can only be entered once for a single round, malicious
 			// participant can keep on broadcasting increasing <roundchange> to everyone,
 			// and old <roundchange> messages will be removed from previous rounds in such
-			// case, so rounds may possibily satisify 2*t+1 more than once.
+			// case, so rounds may possibly satisify 2*t+1 more than once.
 			//
 			// Example: P sends r+1 to remove from r, and sends to r again to trigger 2t+1 once
 			// more to reset timeout.
