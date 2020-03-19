@@ -403,7 +403,7 @@ func (c *Consensus) maximalLocked() State {
 }
 
 // maximalUnconfirmed finds the maximal unconfirmed data with,
-// regard to the Less function in config.
+// regard to the StateCompare function in config.
 func (c *Consensus) maximalUnconfirmed() State {
 	if len(c.unconfirmed) > 0 {
 		maxState := c.unconfirmed[0]
