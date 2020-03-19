@@ -6,7 +6,7 @@
 [4]: LICENSE
 [5]: https://travis-ci.org/Sperax/bdls.svg?branch=master
 [6]: https://travis-ci.org/Sperax/bdls
-[7]: https://goreportcard.com/badge/github.com/Sperax/bdls
+[7]: https://goreportcard.com/badge/github.com/Sperax/bdls?bdls
 [8]: https://goreportcard.com/report/github.com/Sperax/bdls
 [9]: https://codecov.io/gh/Sperax/bdls/branch/master/graph/badge.svg
 [10]: https://codecov.io/gh/Sperax/bdls
