@@ -18,8 +18,8 @@
 ## Introduction
 
 BDLS is an innovative BFT consensus algorithm that features safety and liveness by
-presenting a mathematically proven secure BFT protocol resilient in open networks such as
-the Internet. With BDLS, we invented a new random beacon to ensure verifiable
+presenting a mathematically proven secure BFT protocol that is resilient in open networks such as
+the Internet. With BDLS, we invented a new random beacons to ensure verifiable
 unpredictability and fairness of validators. More importantly, BDLS overcomes many
 problems, such as DoS attacks, as well as the deadlock problem caused by unreliable
 p2p/broadcast channels. These problems are all very relevant to existing realistic open
@@ -29,17 +29,17 @@ is an area largely ignored by most in mainstream BFT protocol design.
 For this library, to make the runtime behavior of consensus algorithm predictable as function:
 y = f(x, t), where 'x' is the message it received, and 't' is the time while being called,
   then'y' is the deterministic status of consensus after 'x' and 't' applied to 'f',
-it has been designed in a deterministic scheme, without parallel computing, networking,
-the correctness of program implementation can be proved with proper test cases.
+it has been designed in a deterministic scheme, without parallel computing, networking, and
+the correctness of program implementation can be proven with proper test cases.
 
 
 ## Features
 
-1. Pure algorithm implementation in deterministic and predictable behavior, easily to be integrated into existing projects, see [DFA](https://en.wikipedia.org/wiki/Deterministic_finite_automaton) for more.
+1. Pure algorithm implementation in deterministic and predictable behavior, easily to be integrated into existing projects, refer to [DFA](https://en.wikipedia.org/wiki/Deterministic_finite_automaton) for more.
 2. Well-tested on various platforms with complicated cases.
 3. Auto back-off under heavy payload, guaranteed finalization(worst case gurantee).
-4. Easily to be integrated into Blockchain & non-Blockchain consensus, like [WAL replication](https://en.wikipedia.org/wiki/Replication_(computing)#Database_replication) in database.
-5. Builtin network emulation for various network latency with comprehensivestatistics.
+4. Easy integratation into Blockchain & non-Blockchain consensus, like [WAL replication](https://en.wikipedia.org/wiki/Replication_(computing)#Database_replication) in database.
+5. Builtin network emulation for various network latency with comprehensive statistics.
 
 ## Documentation
 
