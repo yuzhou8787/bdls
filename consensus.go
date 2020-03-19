@@ -65,11 +65,11 @@ type (
 func DefaultHash(s State) StateHash { return blake2b.Sum256(s) }
 
 type (
-	// consensusStage defines the status of consensus automata
+	// consensusStage defines the status of consensus automate
 	consensusStage byte
 )
 
-// status definitions for consensus state machine.
+// status definitions for consensus state machine
 const (
 	// stages are strictly ordered, do not change!
 	stageRoundChanging consensusStage = iota
@@ -187,7 +187,7 @@ func (r *consensusRound) RoundChangeStates() []State {
 	return states
 }
 
-// AddCommit adds decoded messages along with it's original signed message unchanged,
+// AddCommit adds decoded messages along with its original signed message unchanged,
 // also, messages will be de-duplicated to prevent multiple proposals attack.
 func (r *consensusRound) AddCommit(sp *SignedProto, m *Message) bool {
 	for k := range r.commits {
@@ -210,7 +210,7 @@ func (r *consensusRound) NumCommitted() int {
 	return count
 }
 
-// SignedCommits converts and return []*SignedProto
+// SignedCommits converts and returns []*SignedProto
 func (r *consensusRound) SignedCommits() []*SignedProto {
 	proof := make([]*SignedProto, 0, len(r.commits))
 	for k := range r.commits {
@@ -287,7 +287,7 @@ type Consensus struct {
 	commitTimeout      time.Time // commit status timeout
 	lockReleaseTimeout time.Time // lock-release status timeout
 
-	// locked states, along with it's signatures and hashes in tuple
+	// locked states, along with its signatures and hashes in tuple
 	locks []messageTuple
 
 	// the StateCompare function from config
@@ -320,7 +320,7 @@ type Consensus struct {
 
 // NewConsensus creates a BDLS consensus object to participant in consensus procedure,
 // the consensus object returned is data in memory without goroutines or other
-// non-deterministic objects, and errors will be returned if there are problem, with
+// non-deterministic objects, and errors will be returned if there is problem, with
 // the given config.
 func NewConsensus(config *Config) (*Consensus, error) {
 	err := VerifyConfig(config)
@@ -536,7 +536,7 @@ func (c *Consensus) verifyLockMessage(m *Message, signed *SignedProto) error {
 		}
 
 		// and we also need to check the height & round field,
-		// all <roundchange> message must be in the same round as the lock message
+		// all <roundchange> messages must be in the same round as the lock message
 		if mProof.Height != m.Height {
 			return ErrLockProofHeightMismatch
 		}
@@ -646,7 +646,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 		}
 
 		// we also need to check the B'' selected by leader is the maximal one,
-		// if a data has been proposed.
+		// if data has been proposed.
 		if mProof.State != nil && m.State != nil {
 			if c.stateCompare(m.State, mProof.State) < 0 {
 				return ErrSelectProofNotTheMaximal
@@ -679,7 +679,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 	}
 
 	// if m.State == NULL, but there are non-NULL proofs,
-	// the leader may cheating
+	// the leader may be cheating
 	if m.State == nil && len(dataProposals) > 0 {
 		return ErrSelectStateMismatch
 	}
@@ -693,7 +693,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 	}
 
 	// if these are more than 2*t+1 valid <roundchange> proofs to B',
-	// this also suggest that the leader may cheat.
+	// this also suggests that the leader may cheat.
 	if maxProposed >= 2*c.t()+1 {
 		return ErrSelectProofExceeded
 	}
@@ -823,8 +823,8 @@ func (c *Consensus) broadcastRoundChange() {
 		return
 	}
 
-	// first we need to check if these is any locked data,
-	// a locked data must be sent if there is any.
+	// first we need to check if there is any locked data,
+	// locked data must be sent if there is any.
 	data := c.maximalLocked()
 	if data == nil {
 		// if there's none locked data, we pick the maximum unconfirmed data to propose
@@ -1003,7 +1003,7 @@ func (c *Consensus) getRound(idx uint64, purgeLower bool) *consensusRound {
 }
 
 // lockRelease updates locks while entering lock-release status
-// and will broadcast it's max B' if there is any.
+// and will broadcast its max B' if there is any.
 func (c *Consensus) lockRelease() {
 	// only keep the locked B' with the max round number
 	// while switching to lock-release status
@@ -1019,7 +1019,7 @@ func (c *Consensus) lockRelease() {
 	}
 }
 
-// switchRound set currentRound to the given idx, and creates new a consensusRound
+// switchRound sets currentRound to the given idx, and creates new a consensusRound
 // if it's not been initialized.
 // and all lower rounds will be cleared while switching.
 func (c *Consensus) switchRound(round uint64) { c.currentRound = c.getRound(round, true) }
@@ -1067,7 +1067,7 @@ func (c *Consensus) Propose(s State) {
 	c.unconfirmed = append(c.unconfirmed, s)
 }
 
-// ReceiveMessage process incoming consensus messages, and returns error
+// ReceiveMessage processes incoming consensus messages, and returns error
 // if message cannot be processed for some reason.
 func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 	defer func() {
@@ -1148,7 +1148,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 		round := c.getRound(m.Round, false)
 		// as we cleared all lower rounds message, we handle the message
 		// at round m.Round. if this message is not duplicated in m.Round,
-		// round records message along with it's signed <roundchange> message
+		// round records message along with its signed <roundchange> message
 		// to provide proofs in the future.
 		if round.AddRoundChange(signed, m) {
 			// During any time of the protocol, if a the Pacemaker of Pj (including Pi)
@@ -1168,7 +1168,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 			if round.NumRoundChanges() == 2*c.t()+1 && round.Stage < stageLock {
 				// switch to this round
 				c.switchRound(m.Round)
-				// If Pj has not broadcast the round-change message yet,
+				// If Pj has not broadcasted the round-change message yet,
 				// it broadcasts now.
 				c.broadcastRoundChange()
 
@@ -1279,7 +1279,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 			}
 		}
 
-		// some locks has removed if o is smaller than original locks length,
+		// some locks have been removed if o is smaller than original locks length,
 		// then we keep this lock.
 		if o < len(c.locks) {
 			c.locks = c.locks[:o]
@@ -1384,7 +1384,7 @@ func (c *Consensus) Update(now time.Time) error {
 			if c.currentRound.MaxProposedCount >= 2*c.t()+1 {
 				// lock B' to c.currentRound
 				c.currentRound.LockedState = c.currentRound.MaxProposedState
-				// and computes it's hash for comparing B' in <commit> message
+				// and computes its hash for comparing B' in <commit> message
 				c.currentRound.LockedStateHash = c.stateHash(c.currentRound.MaxProposedState)
 				// broadcast this <lock>, leader itself will receive this message too.
 				c.broadcastLock()
@@ -1456,7 +1456,7 @@ func (c *Consensus) CurrentProof() *SignedProto { return c.latestProof }
 func (c *Consensus) SetLatency(latency time.Duration) { c.latency = latency }
 
 // AddPeer adds a peer to consensus for message delivery, a peer is
-// identified by it's address.
+// identified by its address.
 func (c *Consensus) AddPeer(p PeerInterface) bool {
 	for k := range c.peers {
 		if p.RemoteAddr().String() == c.peers[k].RemoteAddr().String() {
@@ -1468,7 +1468,7 @@ func (c *Consensus) AddPeer(p PeerInterface) bool {
 	return true
 }
 
-// RemovePeer removes a peer from consensus, identified by it's address
+// RemovePeer removes a peer from consensus, identified by its address
 func (c *Consensus) RemovePeer(addr net.Addr) bool {
 	for k := range c.peers {
 		if addr.String() == c.peers[k].RemoteAddr().String() {
