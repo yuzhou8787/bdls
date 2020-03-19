@@ -43,7 +43,7 @@ the correctness of program implementation can be proven with proper test cases.
 
 ## Documentation
 
-For complete documentation, see the associated [Godoc](https://pkg.go.dev/github.com/Sperax/bdls).
+For complete documentation, see the associated [Godoc](https://godoc.org/github.com/Sperax/bdls).
 
 ## Performance
 

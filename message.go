@@ -36,7 +36,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"math/big"
 
@@ -87,12 +86,6 @@ func (t *PubKeyAxis) Unmarshal(data []byte) error {
 
 // Size implements protobuf Size
 func (t *PubKeyAxis) Size() int { return SizeAxis }
-
-// MarshalJSON implements protobuf MarshalJSON
-func (t PubKeyAxis) MarshalJSON() ([]byte, error) { return json.Marshal(t) }
-
-// UnmarshalJSON implements protobuf UnmarshalJSON
-func (t *PubKeyAxis) UnmarshalJSON(data []byte) error { return json.Unmarshal(data, t) }
 
 // Coordinate encodes X-axis and Y-axis for a publickey in an array
 type Coordinate [2 * SizeAxis]byte
