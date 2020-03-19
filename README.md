@@ -45,7 +45,7 @@ the correctness of program implementation can be proved with proper test cases.
 
 For complete documentation, see the associated [Godoc](https://pkg.go.dev/github.com/Sperax/bdls).
 
-## Protocol Performance
+## Performance
 
 ```
 DATE: 2020/03/18
