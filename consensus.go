@@ -117,7 +117,7 @@ type consensusRound struct {
 	commits      []messageTuple // stores <commit> message tuples of this round
 
 	// track current max proposed state in <roundchange>,  we don't have to compute this for
-	// a non-leader participant, or if there's no more than 2t+1 messages for leader.
+	// a non-leader participant, or if there're no more than 2t+1 messages for leader.
 	MaxProposedState State
 	MaxProposedCount int
 }
@@ -388,7 +388,7 @@ func (c *Consensus) lockReleaseDuration(round uint64) time.Duration {
 }
 
 // maximalLocked finds the maximum locked data in this round,
-// with regard to Less function in config.
+// with regard to StateCompare function in config.
 func (c *Consensus) maximalLocked() State {
 	if len(c.locks) > 0 {
 		maxState := c.locks[0].Message.State
