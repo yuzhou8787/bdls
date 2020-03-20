@@ -48,7 +48,7 @@ type fakeAddress string
 func (fakeAddress) Network() string  { return "ipc" }
 func (f fakeAddress) String() string { return string(f) }
 
-// IPCPeer represents a in-process peer for testing, which sends messages
+// IPCPeer represents an in-process peer for testing, which sends messages
 // directly via function call, message delivery latency can be customizable
 // to emulate variety of network latency. Delay is randomized with standard
 // normal distribution based on given parameters.
@@ -107,7 +107,7 @@ func (p *IPCPeer) GetLatestState() (height uint64, round uint64, data State) {
 	return p.c.CurrentState()
 }
 
-// GetLatencies return actual generated latency
+// GetLatencies returns actual generated latency
 func (p *IPCPeer) GetLatencies() (min time.Duration, max time.Duration, total time.Duration) {
 	p.Lock()
 	defer p.Unlock()
