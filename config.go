@@ -60,10 +60,10 @@ type Config struct {
 	StateCompare func(a State, b State) int
 
 	// StateValidate is a function from user to validate the integrity of
-	// a state data.
+	// state data.
 	StateValidate func(State) bool
 
-	// StateHash is a function from user to return a hash to uniquely identifies
+	// StateHash is a function from user to return a hash to uniquely identify
 	// a state.
 	StateHash func(State) StateHash
 }
