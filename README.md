@@ -69,6 +69,9 @@ DELAY.MAX = Actual maximal network latency.
 DELAY.AVG = Actual average latency.
 DELAY.EXP = Expected Latency set to consensus algorithm.
 
+COMMANDS:
+$ go test -v -cpuprofile=cpu.out -memprofile=mem.out -timeout 2h
+
 TESTING CASES:
 =============
 
