@@ -51,7 +51,7 @@ var ErrPubKey = errors.New("incorrect pubkey format")
 var DefaultCurve elliptic.Curve = btcec.S256()
 
 const (
-	// SizeAxis defines bytes size of X-axis or Y-axis in a public key
+	// SizeAxis defines byte size of X-axis or Y-axis in a public key
 	SizeAxis = 32
 	// SignaturePrefix is the prefix for signing a consensus message
 	SignaturePrefix = "===Sperax Signed Message===\n"
@@ -73,7 +73,7 @@ func (t *PubKeyAxis) MarshalTo(data []byte) (n int, err error) {
 
 // Unmarshal implements protobuf Unmarshal
 func (t *PubKeyAxis) Unmarshal(data []byte) error {
-	// mor than 32 bytes, illegal axis
+	// more than 32 bytes, illegal axis
 	if len(data) > SizeAxis {
 		return ErrPubKey
 	}
@@ -110,7 +110,7 @@ func newCoordFromPubKey(pubkey *ecdsa.PublicKey) (ret Coordinate) {
 	return
 }
 
-// Equal test if X,Y axis equals to a coordinates
+// Equal tests if X,Y axis equals to a coordinates
 func (c Coordinate) Equal(x1 PubKeyAxis, y1 PubKeyAxis) bool {
 	if bytes.Equal(x1[:], c[:SizeAxis]) && bytes.Equal(y1[:], c[SizeAxis:]) {
 		return true
