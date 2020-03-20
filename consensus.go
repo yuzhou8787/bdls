@@ -907,9 +907,7 @@ func (c *Consensus) sendCommit(msgLock *Message) {
 	m.Height = msgLock.Height // h
 	m.Round = msgLock.Round   // r
 	m.State = msgLock.State   // B'j
-	// c.sendTo(&m, c.currentLeader())
-	// BUG(xtaci): <commit> message sending is broadcasting right now.
-	c.broadcast(&m)
+	c.sendTo(&m, c.roundLeader(m.Round))
 	c.currentRound.CommitSent = true
 	//log.Println("send:<commit>")
 }
@@ -937,13 +935,12 @@ func (c *Consensus) broadcast(m *Message) *SignedProto {
 	return sp
 }
 
-/*
 // sendTo signs the message with private key before transmitting to the peer.
-func (c *Consensus) sendTo(m *Message, publicKey *ecdsa.PublicKey) {
+func (c *Consensus) sendTo(m *Message, leader Coordinate) {
 	// sign
 	sp := new(SignedProto)
 	sp.Version = ProtocolVersion
-	sp.Sign(m, c.config.PrivateKey)
+	sp.Sign(m, c.privateKey)
 
 	// protobuf marshalling
 	out, err := proto.Marshal(sp)
@@ -951,16 +948,21 @@ func (c *Consensus) sendTo(m *Message, publicKey *ecdsa.PublicKey) {
 		panic(err)
 	}
 
-	// transmit to the specific peer with given publickey
+	// we need to send this message to myself (via loopback) if i'm the leader
+	if leader == c.coordinate {
+		c.loopback = append(c.loopback, out)
+		return
+	}
+
+	// otherwise, find and transmit to the leader
 	for _, peer := range c.peers {
-		peerIdentity := peer.GetPublicKey()
-		if publicKey.X.Cmp(peerIdentity.X) == 0 && publicKey.Y.Cmp(peerIdentity.Y) == 0 {
+		peerIdentity := newCoordFromPubKey(peer.GetPublicKey())
+		if peerIdentity == leader {
 			peer.Send(out)
 			return
 		}
 	}
 }
-*/
 
 // propagate broadcasts signed message UNCHANGED to peers.
 func (c *Consensus) propagate(bts []byte) {

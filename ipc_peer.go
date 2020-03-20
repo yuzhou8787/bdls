@@ -31,6 +31,7 @@
 package bdls
 
 import (
+	"crypto/ecdsa"
 	fmt "fmt"
 	math "math"
 	rand "math/rand"
@@ -75,6 +76,9 @@ func NewIPCPeer(c *Consensus, latency time.Duration) *IPCPeer {
 	p.minLatency = math.MaxInt64
 	return p
 }
+
+// GetPublicKey returns peer's public key as identity
+func (p *IPCPeer) GetPublicKey() *ecdsa.PublicKey { return &p.c.privateKey.PublicKey }
 
 // RemoteAddr implements Peer.RemoteAddr, the address is p's memory address
 func (p *IPCPeer) RemoteAddr() net.Addr { return fakeAddress(fmt.Sprint(unsafe.Pointer(p))) }
