@@ -24,7 +24,7 @@ unpredictability and fairness of validators. More importantly, BDLS overcomes ma
 problems, such as DoS attacks, as well as the deadlock problem caused by unreliable
 p2p/broadcast channels. These problems are all very relevant to existing realistic open
 network scenarios, and are the focus of extensive work in improving Internet security, but it
-is an area largely ignored by most in mainstream BFT protocol design.
+is an area largely ignored by most in mainstream BFT protocol design.(Paper: https://eprint.iacr.org/2019/1460.pdf)
 
 For this library, to make the runtime behavior of consensus algorithm predictable as function:
 y = f(x, t), where 'x' is the message it received, and 't' is the time while being called,
