@@ -956,10 +956,12 @@ func (c *Consensus) sendTo(m *Message, leader Coordinate) {
 
 	// otherwise, find and transmit to the leader
 	for _, peer := range c.peers {
-		peerIdentity := newCoordFromPubKey(peer.GetPublicKey())
-		if peerIdentity == leader {
-			peer.Send(out)
-			return
+		if pk := peer.GetPublicKey(); pk != nil {
+			coord := newCoordFromPubKey(pk)
+			if coord == leader {
+				peer.Send(out)
+				return
+			}
 		}
 	}
 }
