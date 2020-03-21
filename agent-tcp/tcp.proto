@@ -43,23 +43,21 @@ enum CommandType {
 // TCP defines protocol
 message TCP {
 	CommandType Command = 1; 
-	bytes Nonce=2; // a nonce for aead message
-	bytes Message=3;
+	bytes Message=2;
 }
 
 message ClientAuthKey {
-	// public key
+	// client public key
 	bytes x = 1;
 	bytes y = 2;
 }
 
 message ServerChallenge{
-	bytes iv=1;
-	// server ephermal publickey for authentication
-	bytes x=2;
-	bytes y=3;
-	// cipher text, the challenge, the owner of private key can decode this
-	bytes ciphertext=4;
+	// server ephermal publickey for client authentication
+	bytes x=1;
+	bytes y=2;
+	// cipher text, the random bytes challenge, the owner of private key can decode this
+	bytes ciphertext=3;
 }
 
 message ClientResposne{
