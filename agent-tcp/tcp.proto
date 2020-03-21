@@ -41,8 +41,9 @@ enum CommandType {
 
 // TCP defines protocol
 message TCP {
-	CommandType command = 1;
-	bytes Message=2;
+	CommandType Command = 1; 
+	bytes Nonce=2; // a nonce for aead message
+	bytes Message=3;
 }
 
 // MsgECDHInit/MsgECDHReply message
