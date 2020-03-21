@@ -28,30 +28,11 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-syntax = "proto3";
-package agent;
+package agent
 
-// CommandType defines supported commands
-enum CommandType {
-	NOP = 0;
-	ECDH_INIT = 1;
-	ECDH_REPLY= 2;
-	CONSENSUS=3;
-}
+import "errors"
 
-// TCP defines protocol
-message TCP {
-	CommandType Command = 1; 
-	bytes Nonce=2; // a nonce for aead message
-	bytes Message=3;
-}
-
-// MsgECDHInit/MsgECDHReply message
-message MsgECDH{
-	// public key
-	bytes x = 1;
-	bytes y = 2;
-	// signed public-key hash 
-	bytes r = 3;
-	bytes s = 4;
-}
+var (
+	ErrStateIncorrectECDHInit = errors.New("incorrect state for ECDH init message")
+	ErrMessageLengthExceed    = errors.New("message size exceeded maximum")
+)
