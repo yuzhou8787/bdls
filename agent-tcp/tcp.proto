@@ -34,9 +34,10 @@ package agent;
 // CommandType defines supported commands
 enum CommandType {
 	NOP = 0;
-	ECDH_INIT = 1;
-	ECDH_REPLY= 2;
-	CONSENSUS=3;
+	CLIENT_AUTHKEY=1;	
+	SERVER_CHALLENGE=2;
+	CLIENT_RESPONSE = 3;
+	CONSENSUS=4;
 }
 
 // TCP defines protocol
@@ -46,12 +47,21 @@ message TCP {
 	bytes Message=3;
 }
 
-// MsgECDHInit/MsgECDHReply message
-message MsgECDH{
+message ClientAuthKey {
 	// public key
 	bytes x = 1;
 	bytes y = 2;
-	// signed public-key hash 
-	bytes r = 3;
-	bytes s = 4;
+}
+
+message ServerChallenge{
+	bytes iv=1;
+	// server ephermal publickey for authentication
+	bytes x=2;
+	bytes y=3;
+	// cipher text, the challenge, the owner of private key can decode this
+	bytes ciphertext=4;
+}
+
+message ClientResposne{
+	bytes plaintext=1;
 }

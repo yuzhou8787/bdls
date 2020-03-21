@@ -62,9 +62,9 @@ type connState byte
 const (
 	// connInit: the peer has just connected
 	connInit connState = iota
-	// connECDHInit: the peer has sent it's ECDHInit
-	connECDHInit
-	// connAuthenticated: the peer has authenticated
+	// connAuthKey: the peer begined it's public key authentication
+	connAuthKey
+	// connAuthenticated: the peer has authenticated it's public key
 	connAuthenticated
 )
 
@@ -185,12 +185,13 @@ func (p *TCPPeer) readLoop() {
 			// commands have related status
 			switch msg.Command {
 			case CommandType_NOP:
-			case CommandType_ECDH_INIT:
-				if err := p.handleECDHInit(&msg); err != nil {
+			case CommandType_CLIENT_AUTHKEY:
+				if err := p.handleAuthKey(&msg); err != nil {
 					log.Println(err)
 					return
 				}
-			case CommandType_ECDH_REPLY:
+			case CommandType_CLIENT_RESPONSE:
+			case CommandType_SERVER_CHALLENGE:
 			case CommandType_CONSENSUS:
 			}
 		}
@@ -198,7 +199,7 @@ func (p *TCPPeer) readLoop() {
 }
 
 //
-func (p *TCPPeer) handleECDHInit(msg *TCP) error {
+func (p *TCPPeer) handleAuthKey(msg *TCP) error {
 	if p.connState == connInit { // only when in init status
 		// peer sent init, then we should send
 		return nil
