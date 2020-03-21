@@ -28,74 +28,29 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package agent
+syntax = "proto3";
+package agent;
 
-import (
-	"crypto/ecdsa"
-	"net"
-	"sync"
-	"time"
-)
-
-const (
-	defaultWriteTimeout = 10 * time.Second
-)
-
-// TCPPeer contains information related to a tcp connection
-type TCPPeer struct {
-	conn      net.Conn         // the connection to this peer
-	publicKey *ecdsa.PublicKey // if it's not nil, the peer is known(authenticated in some way)
-
-	pending   [][]byte      // pending output data to this peer
-	chPending chan struct{} // notification on new pending data
-
-	die        chan struct{}
-	sync.Mutex // mutex for all fields
+// CommandType defines supported commands
+enum CommandType {
+	CMD_NOP = 0;
+	CMD_ECDH_INIT = 1;
+	CMD_ECDH_REPLY= 2;
+	CMD_CONSENSUS=3;
 }
 
-// NewTCPPeer creates a consensus peer based on net.Conn and and async-io(gaio) watcher for sending
-func NewTCPPeer(conn net.Conn) *TCPPeer {
-	p := new(TCPPeer)
-	p.chPending = make(chan struct{}, 1)
-	p.conn = conn
-	p.die = make(chan struct{})
-	return p
+// TCP defines protocol
+message TCP {
+	CommandType command = 1;
+	bytes Message=2;
 }
 
-// GetPublicKey returns peer's public key as identity
-func (p *TCPPeer) GetPublicKey() *ecdsa.PublicKey {
-	p.Lock()
-	defer p.Unlock()
-	return p.publicKey
-}
-
-// RemoteAddr should return peer's address as identity
-func (p *TCPPeer) RemoteAddr() net.Addr { return p.conn.RemoteAddr() }
-
-// Send message to this peer
-func (p *TCPPeer) Send(out []byte) error {
-	p.Lock()
-	defer p.Unlock()
-	p.pending = append(p.pending, out)
-	p.notifyPending()
-	return nil
-}
-
-// notifyPending output
-func (p *TCPPeer) notifyPending() {
-	select {
-	case p.chPending <- struct{}{}:
-	default:
-	}
-}
-
-// a loop for transmission
-func (p *TCPPeer) txLoop() {
-	for {
-		select {
-		case <-p.chPending:
-		case <-p.die:
-			return
-		}
-	}
+// MsgECDHInit/MsgECDHReply message
+message MsgECDH{
+	// public key
+	bytes x = 1;
+	bytes y = 2;
+	// signed public-key hash 
+	bytes r = 3;
+	bytes s = 4;
 }
