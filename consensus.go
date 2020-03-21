@@ -959,8 +959,8 @@ func (c *Consensus) sendTo(m *Message, leader Coordinate) {
 		if pk := peer.GetPublicKey(); pk != nil {
 			coord := newCoordFromPubKey(pk)
 			if coord == leader {
+				// we do not return here to avoid missing re-connected peer.
 				peer.Send(out)
-				return
 			}
 		}
 	}
