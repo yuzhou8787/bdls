@@ -48,18 +48,20 @@ message TCP {
 
 message ClientAuthKey {
 	// client public key
-	bytes x = 1;
-	bytes y = 2;
+	bytes X = 1;
+	bytes Y = 2;
 }
 
 message ServerChallenge{
 	// server ephermal publickey for client authentication
-	bytes x=1;
-	bytes y=2;
+	bytes X=1;
+	bytes Y=2;
 	// cipher text, the random bytes challenge, the owner of private key can decode this
-	bytes ciphertext=3;
+	bytes CipherText=3;	
+	// random iv
+	bytes IV=4;
 }
 
 message ClientResposne{
-	bytes plaintext=1;
+	bytes PlainText=1;
 }

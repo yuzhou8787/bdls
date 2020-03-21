@@ -31,15 +31,19 @@
 package agent
 
 import (
+	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"encoding/binary"
 	io "io"
 	"log"
+	"math/big"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/Sperax/bdls"
 	proto "github.com/gogo/protobuf/proto"
 )
 
@@ -64,6 +68,8 @@ const (
 	connInit connState = iota
 	// connAuthKey: the peer begined it's public key authentication
 	connAuthKey
+	// connChallengeSent: we have sent challenge to the peer
+	connChallengeSent
 	// connAuthenticated: the peer has authenticated it's public key
 	connAuthenticated
 )
@@ -119,14 +125,22 @@ func (p *TCPPeer) Send(out []byte) error {
 	p.Lock()
 	defer p.Unlock()
 	p.consensusMessages = append(p.consensusMessages, out)
-	p.notifyPending()
+	p.notifyConsensusMessage()
 	return nil
 }
 
-// notifyPending output
-func (p *TCPPeer) notifyPending() {
+// notifyConsensusMessage output
+func (p *TCPPeer) notifyConsensusMessage() {
 	select {
 	case p.chConsensusMessage <- struct{}{}:
+	default:
+	}
+}
+
+// notifyConsensusMessage output
+func (p *TCPPeer) notifyInternalMessage() {
+	select {
+	case p.chInternalMessages <- struct{}{}:
 	default:
 	}
 }
@@ -186,12 +200,20 @@ func (p *TCPPeer) readLoop() {
 			switch msg.Command {
 			case CommandType_NOP:
 			case CommandType_CLIENT_AUTHKEY:
-				if err := p.handleAuthKey(&msg); err != nil {
+				var authKey ClientAuthKey
+				err = proto.Unmarshal(bts, &authKey)
+				if err != nil {
 					log.Println(err)
 					return
 				}
-			case CommandType_CLIENT_RESPONSE:
+
+				if err := p.handleClientAuthKey(&authKey); err != nil {
+					log.Println(err)
+					return
+				}
 			case CommandType_SERVER_CHALLENGE:
+
+			case CommandType_CLIENT_RESPONSE:
 			case CommandType_CONSENSUS:
 			}
 		}
@@ -199,13 +221,71 @@ func (p *TCPPeer) readLoop() {
 }
 
 //
-func (p *TCPPeer) handleAuthKey(msg *TCP) error {
-	if p.connState == connInit { // only when in init status
-		// peer sent init, then we should send
+func (p *TCPPeer) handleClientAuthKey(authKey *ClientAuthKey) error {
+	if p.connState == connInit { // when in init status
+		// create ephermal key
+		ephemeral, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
+		if err != nil {
+			panic(err)
+		}
+
+		// ECDH
+		pubkey := ecdsa.PublicKey{bdls.DefaultCurve, big.NewInt(0).SetBytes(authKey.X), big.NewInt(0).SetBytes(authKey.Y)}
+		secret, _ := pubkey.Curve.ScalarMult(pubkey.X, pubkey.Y, ephemeral.D.Bytes())
+
+		// create challenge texts and encode
+		plainText := make([]byte, 1024)
+		_, err = io.ReadFull(rand.Reader, plainText)
+		if err != nil {
+			panic(err)
+		}
+
+		// iv
+		iv := make([]byte, aes.BlockSize)
+		_, err = io.ReadFull(rand.Reader, iv)
+		if err != nil {
+			panic(err)
+		}
+
+		// encrypt using AES-256-CFB
+		block, err := aes.NewCipher(secret.Bytes())
+		if err != nil {
+			panic(err)
+		}
+
+		stream := cipher.NewCFBDecrypter(block, iv)
+		cipherText := make([]byte, 1024)
+		stream.XORKeyStream(cipherText, plainText)
+
+		var challenge ServerChallenge
+		challenge.X = ephemeral.PublicKey.X.Bytes()
+		challenge.Y = ephemeral.PublicKey.X.Bytes()
+		challenge.CipherText = cipherText
+		challenge.IV = iv
+
+		// proto marshal
+		bts, err := proto.Marshal(&challenge)
+		if err != nil {
+			panic(err)
+		}
+
+		// enqueue
+		p.Lock()
+		p.internalMessages = append(p.internalMessages, bts)
+		p.Unlock()
+
+		p.notifyInternalMessage()
+
+		// state shift
+		p.connState = connChallengeSent
 		return nil
 	} else {
-		return ErrStateIncorrectECDHInit
+		return ErrClientAuthKeyState
 	}
+}
+
+func (p *TCPPeer) handleServerChallenge(authKey *ClientAuthKey) error {
+	return nil
 }
 
 // sendLoop for consensus message transmission
@@ -215,7 +295,6 @@ func (p *TCPPeer) sendLoop() {
 	var pending [][]byte
 	var msg TCP
 	msg.Command = CommandType_CONSENSUS
-	msg.Nonce = make([]byte, p.aead.NonceSize())
 	msgLength := make([]byte, MessageLength)
 
 	for {

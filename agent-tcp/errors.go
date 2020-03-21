@@ -33,6 +33,6 @@ package agent
 import "errors"
 
 var (
-	ErrStateIncorrectECDHInit = errors.New("incorrect state for ECDH init message")
-	ErrMessageLengthExceed    = errors.New("message size exceeded maximum")
+	ErrClientAuthKeyState  = errors.New("incorrect state for CLIENT_AUTHKEY message")
+	ErrMessageLengthExceed = errors.New("message size exceeded maximum")
 )
