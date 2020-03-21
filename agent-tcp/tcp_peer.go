@@ -32,63 +32,47 @@ package agent
 
 import (
 	"crypto/ecdsa"
-	"encoding/binary"
 	"net"
 	"sync"
 	"time"
-
-	"github.com/xtaci/gaio"
 )
-
-// state to toggle for connection reading
-type readState byte
 
 const (
-	stateReadSize readState = iota
-	stateReadMessage
+	defaultWriteTimeout = 10 * time.Second
 )
 
-// Peer contains information related to a connection
-type Peer struct {
-	publicKey    *ecdsa.PublicKey // if it's not nil, the peer is known(authenticated in some way)
-	readState    readState
-	conn         net.Conn
-	watcher      *gaio.Watcher
-	writeTimeout time.Duration
+// TCPPeer contains information related to a tcp connection
+type TCPPeer struct {
+	conn        net.Conn           // the connection to this peer
+	publicKey   *ecdsa.PublicKey   // if it's not nil, the peer is known(authenticated in some way)
+	asyncOutput func([]byte) error // an async output function to send data
 	sync.Mutex
 }
 
-// NewPeer creates a consensus peer based on net.Conn with given writeTimeout and async-io(gaio) watcher
-func NewPeer(watcher *gaio.Watcher, writeTimeout time.Duration, conn net.Conn) *Peer {
-	p := new(Peer)
-	p.watcher = watcher
-	p.writeTimeout = writeTimeout
+// NewTCPPeer creates a consensus peer based on net.Conn and and async-io(gaio) watcher for sending
+func NewTCPPeer(conn net.Conn, asyncOutput func([]byte) error) *TCPPeer {
+	p := new(TCPPeer)
+	p.asyncOutput = asyncOutput
 	p.conn = conn
 	return p
 }
 
 // SetPublicKey sets thispeer's public key
-func (p *Peer) SetPublicKey(publicKey *ecdsa.PublicKey) {
+func (p *TCPPeer) SetPublicKey(publicKey *ecdsa.PublicKey) {
 	p.Lock()
 	defer p.Unlock()
 	p.publicKey = publicKey
 }
 
 // GetPublicKey returns peer's public key as identity
-func (p *Peer) GetPublicKey() *ecdsa.PublicKey {
+func (p *TCPPeer) GetPublicKey() *ecdsa.PublicKey {
 	p.Lock()
 	defer p.Unlock()
 	return p.publicKey
 }
 
 // RemoteAddr should return peer's address as identity
-func (p *Peer) RemoteAddr() net.Addr { return p.conn.RemoteAddr() }
+func (p *TCPPeer) RemoteAddr() net.Addr { return p.conn.RemoteAddr() }
 
 // Send message to this peer
-func (p *Peer) Send(out []byte) error {
-	// we also need to append a 4Bytes length before sending
-	buf := make([]byte, len(out)+4)
-	binary.LittleEndian.PutUint32(buf, uint32(len(out)))
-	copy(buf[4:], out)
-	return p.watcher.WriteTimeout(p, p.conn, buf, time.Now().Add(p.writeTimeout))
-}
+func (p *TCPPeer) Send(out []byte) error { return p.asyncOutput(out) }
