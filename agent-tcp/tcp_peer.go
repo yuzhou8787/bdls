@@ -59,6 +59,9 @@ const (
 	// timeout for a unresponsive connection
 	defaultReadTimeout  = 10 * time.Second
 	defaultWriteTimeout = 10 * time.Second
+
+	// ChallengeSize
+	ChallengeSize = 128
 )
 
 // connState is the connection state for this peer
@@ -290,7 +293,7 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 		p.peerPublicKey = &ecdsa.PublicKey{bdls.DefaultCurve, x, y}
 
 		// create challenge texts and encode
-		p.plaintext = make([]byte, 1024)
+		p.plaintext = make([]byte, ChallengeSize)
 		_, err = io.ReadFull(rand.Reader, p.plaintext)
 		if err != nil {
 			panic(err)
@@ -310,7 +313,7 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 		}
 
 		stream := cipher.NewCFBEncrypter(block, p.iv)
-		cipherText := make([]byte, 1024)
+		cipherText := make([]byte, ChallengeSize)
 		stream.XORKeyStream(cipherText, p.plaintext)
 
 		var challenge KeyAuthChallenge
