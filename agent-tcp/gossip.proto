@@ -34,25 +34,25 @@ package agent;
 // CommandType defines supported commands
 enum CommandType {
 	NOP = 0;
-	CLIENT_AUTHKEY=1;	
-	SERVER_CHALLENGE=2;
-	CLIENT_RESPONSE = 3;
+	KEY_AUTH_INIT=1;	
+	KEY_AUTH_CHALLENGE=2;
+	KEY_AUTH_CHALLENGE_REPLY= 3;
 	CONSENSUS=4;
 }
 
-// TCP defines protocol
-message TCP {
+// Gossip defines a stream based protocol
+message Gossip{
 	CommandType Command = 1; 
 	bytes Message=2;
 }
 
-message ClientAuthKey {
+message KeyAuthInit {
 	// client public key
 	bytes X = 1;
 	bytes Y = 2;
 }
 
-message ServerChallenge{
+message KeyAuthChallenge {
 	// server ephermal publickey for client authentication
 	bytes X=1;
 	bytes Y=2;
@@ -62,6 +62,6 @@ message ServerChallenge{
 	bytes IV=4;
 }
 
-message ClientResposne{
+message KeyAuthChallengeReply{
 	bytes PlainText=1;
 }

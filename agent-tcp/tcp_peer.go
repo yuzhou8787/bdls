@@ -75,17 +75,22 @@ const (
 	connAuthenticated
 )
 
+type LockedConsensus struct {
+	*bdls.Consensus
+	sync.Mutex
+}
+
 // TCPPeer contains information related to a tcp connection peer
 type TCPPeer struct {
-	privateKey *ecdsa.PrivateKey // a private key to sign messages to this peer
-	connState  connState         // connection state
-	conn       net.Conn          // the connection to this peer
-	publicKey  *ecdsa.PublicKey  // the public key the peer announced
+	consensus     *LockedConsensus  // the consensus core
+	privateKey    *ecdsa.PrivateKey // a private key to sign messages to this peer
+	connState     connState         // connection state
+	conn          net.Conn          // the connection to this peer
+	peerPublicKey *ecdsa.PublicKey  // the announced public key of the peer, only becomes valid if connState == connAuthenticated
 
-	// the challenge
-	announcedKey *ecdsa.PublicKey
-	plaintext    []byte
-	iv           []byte
+	// the challenge for the peer if peer requested key authentication
+	plaintext []byte
+	iv        []byte
 
 	// message queues and their notifications
 	consensusMessages  [][]byte      // all pending outgoing consensus messages to this peer
@@ -103,16 +108,18 @@ type TCPPeer struct {
 	sync.Mutex
 }
 
-// NewTCPPeer creates a consensus peer based on net.Conn and and async-io(gaio) watcher for sending
-func NewTCPPeer(conn net.Conn, privateKey *ecdsa.PrivateKey) *TCPPeer {
+// NewTCPPeer binds a connection to local consensus core, with a private key for some message signing
+func NewTCPPeer(conn net.Conn, privateKey *ecdsa.PrivateKey, consensus *LockedConsensus) *TCPPeer {
 	p := new(TCPPeer)
 	p.privateKey = privateKey
+	p.consensus = consensus
 	p.chConsensusMessage = make(chan struct{}, 1)
 	p.chInternalMessage = make(chan struct{}, 1)
 	p.conn = conn
 	p.die = make(chan struct{})
 	// we start readLoop first
 	go p.readLoop()
+	go p.sendLoop()
 	return p
 }
 
@@ -120,7 +127,10 @@ func NewTCPPeer(conn net.Conn, privateKey *ecdsa.PrivateKey) *TCPPeer {
 func (p *TCPPeer) GetPublicKey() *ecdsa.PublicKey {
 	p.Lock()
 	defer p.Unlock()
-	return p.publicKey
+	if p.connState == connAuthenticated {
+		return p.peerPublicKey
+	}
+	return nil
 }
 
 // RemoteAddr should return peer's address as identity
@@ -151,8 +161,10 @@ func (p *TCPPeer) notifyInternalMessage() {
 	}
 }
 
+// Close terminates connection to this peer
 func (p *TCPPeer) Close() {
 	p.dieOnce.Do(func() {
+		p.conn.Close()
 		close(p.die)
 	})
 }
@@ -195,62 +207,73 @@ func (p *TCPPeer) readLoop() {
 			}
 
 			// unmarshal bytes to message
-			var msg TCP
-			err = proto.Unmarshal(bts, &msg)
+			var gossip Gossip
+			err = proto.Unmarshal(bts, &gossip)
 			if err != nil {
 				log.Println(err)
 				return
 			}
 
-			// commands have related status
-			switch msg.Command {
-			case CommandType_NOP:
-			case CommandType_CLIENT_AUTHKEY:
-				var authKey ClientAuthKey
-				err = proto.Unmarshal(bts, &authKey)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				if err := p.handleClientAuthKey(&authKey); err != nil {
-					log.Println(err)
-					return
-				}
-			case CommandType_SERVER_CHALLENGE:
-				var challenge ServerChallenge
-				err = proto.Unmarshal(bts, &challenge)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				if err := p.handleServerChallenge(&challenge); err != nil {
-					log.Println(err)
-					return
-				}
-
-			case CommandType_CLIENT_RESPONSE:
-				var response ClientResposne
-				err = proto.Unmarshal(bts, &response)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				if err := p.handleClientResponse(&response); err != nil {
-					log.Println(err)
-					return
-				}
-
-			case CommandType_CONSENSUS:
+			err = p.handleGossip(&gossip)
+			if err != nil {
+				log.Println(err)
 			}
 		}
 	}
 }
 
+// handle TCP
+func (p *TCPPeer) handleGossip(msg *Gossip) error {
+	switch msg.Command {
+	case CommandType_NOP:
+	case CommandType_KEY_AUTH_INIT:
+		var m KeyAuthInit
+		err := proto.Unmarshal(msg.Message, &m)
+		if err != nil {
+			return err
+		}
+
+		err = p.handleKeyAuthInit(&m)
+		if err != nil {
+			return err
+		}
+	case CommandType_KEY_AUTH_CHALLENGE:
+		var m KeyAuthChallenge
+		err := proto.Unmarshal(msg.Message, &m)
+		if err != nil {
+			return err
+		}
+
+		err = p.handleKeyAuthChallenge(&m)
+		if err != nil {
+			return err
+		}
+
+	case CommandType_KEY_AUTH_CHALLENGE_REPLY:
+		var m KeyAuthChallengeReply
+		err := proto.Unmarshal(msg.Message, &m)
+		if err != nil {
+			return err
+		}
+
+		err = p.handleKeyAuthChallengeReply(&m)
+		if err != nil {
+			return err
+		}
+
+	case CommandType_CONSENSUS:
+		p.consensus.Lock()
+		p.consensus.ReceiveMessage(msg.Message, time.Now())
+		p.consensus.Unlock()
+	}
+	return nil
+}
+
 //
-func (p *TCPPeer) handleClientAuthKey(authKey *ClientAuthKey) error {
+func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
+	p.Lock()
+	defer p.Unlock()
+
 	if p.connState == connInit { // when in init status
 		// create ephermal key
 		ephemeral, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
@@ -264,7 +287,7 @@ func (p *TCPPeer) handleClientAuthKey(authKey *ClientAuthKey) error {
 		secret, _ := bdls.DefaultCurve.ScalarMult(x, y, ephemeral.D.Bytes())
 
 		// stored announced key
-		p.announcedKey = &ecdsa.PublicKey{bdls.DefaultCurve, x, y}
+		p.peerPublicKey = &ecdsa.PublicKey{bdls.DefaultCurve, x, y}
 
 		// create challenge texts and encode
 		p.plaintext = make([]byte, 1024)
@@ -290,7 +313,7 @@ func (p *TCPPeer) handleClientAuthKey(authKey *ClientAuthKey) error {
 		cipherText := make([]byte, 1024)
 		stream.XORKeyStream(cipherText, p.plaintext)
 
-		var challenge ServerChallenge
+		var challenge KeyAuthChallenge
 		challenge.X = ephemeral.PublicKey.X.Bytes()
 		challenge.Y = ephemeral.PublicKey.X.Bytes()
 		challenge.CipherText = cipherText
@@ -303,10 +326,7 @@ func (p *TCPPeer) handleClientAuthKey(authKey *ClientAuthKey) error {
 		}
 
 		// enqueue
-		p.Lock()
 		p.internalMessages = append(p.internalMessages, bts)
-		p.Unlock()
-
 		p.notifyInternalMessage()
 
 		// state shift
@@ -317,7 +337,10 @@ func (p *TCPPeer) handleClientAuthKey(authKey *ClientAuthKey) error {
 	}
 }
 
-func (p *TCPPeer) handleServerChallenge(challenge *ServerChallenge) error {
+func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
+	p.Lock()
+	defer p.Unlock()
+
 	// ECDH
 	x := big.NewInt(0).SetBytes(challenge.X)
 	y := big.NewInt(0).SetBytes(challenge.Y)
@@ -334,7 +357,7 @@ func (p *TCPPeer) handleServerChallenge(challenge *ServerChallenge) error {
 	stream.XORKeyStream(challenge.CipherText, challenge.CipherText)
 
 	// send back client challenge response
-	var response ClientResposne
+	var response KeyAuthChallengeReply
 	response.PlainText = challenge.CipherText
 
 	// proto marshal
@@ -344,19 +367,18 @@ func (p *TCPPeer) handleServerChallenge(challenge *ServerChallenge) error {
 	}
 
 	// enqueue
-	p.Lock()
 	p.internalMessages = append(p.internalMessages, bts)
-	p.Unlock()
-
 	p.notifyInternalMessage()
 	return nil
 }
 
 //
-func (p *TCPPeer) handleClientResponse(response *ClientResposne) error {
+func (p *TCPPeer) handleKeyAuthChallengeReply(response *KeyAuthChallengeReply) error {
+	p.Lock()
+	defer p.Unlock()
+
 	if p.connState == connChallengeSent {
 		if bytes.Equal(p.plaintext, response.PlainText) {
-			p.publicKey = p.announcedKey
 			p.plaintext = nil
 			p.iv = nil
 			p.connState = connAuthenticated
@@ -373,7 +395,7 @@ func (p *TCPPeer) sendLoop() {
 	defer p.Close()
 
 	var pending [][]byte
-	var msg TCP
+	var msg Gossip
 	msg.Command = CommandType_CONSENSUS
 	msgLength := make([]byte, MessageLength)
 
@@ -408,6 +430,23 @@ func (p *TCPPeer) sendLoop() {
 
 				// write message
 				_, err = p.conn.Write(out)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			}
+		case <-p.chInternalMessage:
+			for _, bts := range pending {
+				binary.LittleEndian.PutUint32(msgLength, uint32(len(bts)))
+				// write length
+				_, err := p.conn.Write(msgLength)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				// write message
+				_, err = p.conn.Write(bts)
 				if err != nil {
 					log.Println(err)
 					return
