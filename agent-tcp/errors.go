@@ -33,6 +33,9 @@ package agent
 import "errors"
 
 var (
-	ErrClientAuthKeyState  = errors.New("incorrect state for CLIENT_AUTHKEY message")
-	ErrMessageLengthExceed = errors.New("message size exceeded maximum")
+	ErrClientAuthKeyState    = errors.New("incorrect state for CLIENT_AUTHKEY message")
+	ErrServerChallengeState  = errors.New("incorrect state for SERVER_CHALLENGE message")
+	ErrClientResponseState   = errors.New("incorrect state for CLIENT_RESPONSE message")
+	ErrInvalidClientResponse = errors.New("invalid responsefor CLIENT_RESPONSE message")
+	ErrMessageLengthExceed   = errors.New("message size exceeded maximum")
 )
