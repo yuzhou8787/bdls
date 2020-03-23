@@ -92,6 +92,7 @@ func NewTimedSched(parallel int) *TimedSched {
 func (ts *TimedSched) sched() {
 	var tasks timedFuncHeap
 	timer := time.NewTimer(0)
+	drained := false
 	for {
 		select {
 		case task := <-ts.chTask:
@@ -101,17 +102,22 @@ func (ts *TimedSched) sched() {
 				task.execute()
 			} else {
 				heap.Push(&tasks, task)
-				// reset timer to trigger based on the top element
+				// properly reset timer to trigger based on the top element
+				stopped := timer.Stop()
+				if !stopped && !drained {
+					<-timer.C
+				}
 				timer.Reset(tasks[0].ts.Sub(now))
+				drained = false
 			}
-
-		case <-timer.C:
+		case now := <-timer.C:
+			drained = true
 			for tasks.Len() > 0 {
-				now := time.Now()
 				if now.After(tasks[0].ts) {
 					heap.Pop(&tasks).(timedFunc).execute()
 				} else {
 					timer.Reset(tasks[0].ts.Sub(now))
+					drained = false
 					break
 				}
 			}
