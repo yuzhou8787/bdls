@@ -78,18 +78,44 @@ const (
 	connAuthenticated
 )
 
-type LockedConsensus struct {
-	*bdls.Consensus
+// A TCPAgent binds consensus core to a TCPAgent object, which may have multiple TCPPeer
+type TCPAgent struct {
+	consensus  *bdls.Consensus   // the consensus core
+	privateKey *ecdsa.PrivateKey // a private key to sign messages to this peer
+	peers      []TCPPeer
+
+	die     chan struct{}
+	dieOnce sync.Once
 	sync.Mutex
+}
+
+// NewTCPAgent inited with consensus and a private key for some message signing
+func NewTCPAgent(consensus *bdls.Consensus, privateKey *ecdsa.PrivateKey) *TCPAgent {
+	agent := new(TCPAgent)
+	agent.consensus = consensus
+	agent.privateKey = privateKey
+	return agent
+}
+
+func (agent *TCPAgent) AddPeer(p *TCPPeer) {
+}
+
+// consensus updater
+func (agent *TCPAgent) Update() {
+}
+
+func (agent *TCPAgent) HandleConsensusMessage(bts []byte) error {
+	agent.Lock()
+	defer agent.Unlock()
+	return agent.consensus.ReceiveMessage(bts, time.Now())
 }
 
 // TCPPeer contains information related to a tcp connection peer
 type TCPPeer struct {
-	consensus     *LockedConsensus  // the consensus core
-	privateKey    *ecdsa.PrivateKey // a private key to sign messages to this peer
-	connState     connState         // connection state
-	conn          net.Conn          // the connection to this peer
-	peerPublicKey *ecdsa.PublicKey  // the announced public key of the peer, only becomes valid if connState == connAuthenticated
+	agent         *TCPAgent
+	connState     connState        // connection state
+	conn          net.Conn         // the connection to this peer
+	peerPublicKey *ecdsa.PublicKey // the announced public key of the peer, only becomes valid if connState == connAuthenticated
 
 	// the challenge for the peer if peer requested key authentication
 	plaintext []byte
@@ -111,11 +137,8 @@ type TCPPeer struct {
 	sync.Mutex
 }
 
-// NewTCPPeer binds a connection to local consensus core, with a private key for some message signing
-func NewTCPPeer(conn net.Conn, privateKey *ecdsa.PrivateKey, consensus *LockedConsensus) *TCPPeer {
+func NewTCPPeer(conn net.Conn) *TCPPeer {
 	p := new(TCPPeer)
-	p.privateKey = privateKey
-	p.consensus = consensus
 	p.chConsensusMessage = make(chan struct{}, 1)
 	p.chInternalMessage = make(chan struct{}, 1)
 	p.conn = conn
@@ -227,6 +250,9 @@ func (p *TCPPeer) readLoop() {
 
 // handle TCP
 func (p *TCPPeer) handleGossip(msg *Gossip) error {
+	p.Lock()
+	defer p.Unlock()
+
 	switch msg.Command {
 	case CommandType_NOP:
 	case CommandType_KEY_AUTH_INIT:
@@ -265,18 +291,13 @@ func (p *TCPPeer) handleGossip(msg *Gossip) error {
 		}
 
 	case CommandType_CONSENSUS:
-		p.consensus.Lock()
-		p.consensus.ReceiveMessage(msg.Message, time.Now())
-		p.consensus.Unlock()
+		p.agent.HandleConsensusMessage(msg.Message)
 	}
 	return nil
 }
 
 //
 func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
-	p.Lock()
-	defer p.Unlock()
-
 	if p.connState == connInit { // when in init status
 		// create ephermal key
 		ephemeral, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
@@ -341,13 +362,10 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 }
 
 func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
-	p.Lock()
-	defer p.Unlock()
-
 	// ECDH
 	x := big.NewInt(0).SetBytes(challenge.X)
 	y := big.NewInt(0).SetBytes(challenge.Y)
-	secret, _ := bdls.DefaultCurve.ScalarMult(x, y, p.privateKey.D.Bytes())
+	secret, _ := bdls.DefaultCurve.ScalarMult(x, y, p.agent.privateKey.D.Bytes())
 
 	// encrypt using AES-256-CFB
 	block, err := aes.NewCipher(secret.Bytes())
@@ -377,9 +395,6 @@ func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
 
 //
 func (p *TCPPeer) handleKeyAuthChallengeReply(response *KeyAuthChallengeReply) error {
-	p.Lock()
-	defer p.Unlock()
-
 	if p.connState == connChallengeSent {
 		if bytes.Equal(p.plaintext, response.PlainText) {
 			p.plaintext = nil
