@@ -65,10 +65,10 @@ const (
 	ChallengeSize = 128
 )
 
-// authenticationState is the authentication statuse for this peer
+// authenticationState is the authentication status for both peer
 type authenticationState byte
 
-// peer initated public-key authentication states
+// peer initated public-key authentication status
 const (
 	// peerNotAuthenticated: the peer has just connected
 	peerNotAuthenticated authenticationState = iota
@@ -81,7 +81,7 @@ const (
 	peerAuthenticatedFailed
 )
 
-// local initated public key authentication states
+// local initated public key authentication status
 const (
 	localNotAuthenticated authenticationState = iota
 	// localSentAuthKey: we have sent auth key command to the peer
@@ -96,14 +96,14 @@ const (
 type TCPAgent struct {
 	consensus  *bdls.Consensus   // the consensus core
 	privateKey *ecdsa.PrivateKey // a private key to sign messages to this peer
-	peers      []TCPPeer
+	peers      []*TCPPeer
 
 	die     chan struct{}
 	dieOnce sync.Once
 	sync.Mutex
 }
 
-// NewTCPAgent inited with consensus and a private key for some message signing
+// NewTCPAgent initiate a TCPAgent which talks consensus protocol among peers
 func NewTCPAgent(consensus *bdls.Consensus, privateKey *ecdsa.PrivateKey) *TCPAgent {
 	agent := new(TCPAgent)
 	agent.consensus = consensus
@@ -111,14 +111,52 @@ func NewTCPAgent(consensus *bdls.Consensus, privateKey *ecdsa.PrivateKey) *TCPAg
 	return agent
 }
 
+// AddPeer adds a peer to this agent
 func (agent *TCPAgent) AddPeer(p *TCPPeer) bool {
 	agent.Lock()
 	defer agent.Unlock()
-	return agent.consensus.AddPeer(p)
+
+	select {
+	case <-agent.die:
+		return false
+	default:
+		agent.peers = append(agent.peers, p)
+		return agent.consensus.AddPeer(p)
+	}
 }
 
-// consensus updater
-func (agent *TCPAgent) Update() {
+// RemovePeer removes a TCPPeer from this agent
+func (agent *TCPAgent) RemovePeer(p *TCPPeer) bool {
+	agent.Lock()
+	defer agent.Unlock()
+
+	peerAddress := p.RemoteAddr().String()
+	for k := range agent.peers {
+		if agent.peers[k].RemoteAddr().String() == peerAddress {
+			copy(agent.peers[k:], agent.peers[k+1:])
+			agent.peers = agent.peers[:len(agent.peers)-1]
+			return true
+		}
+	}
+	return false
+}
+
+// Close stops all activities on this agent
+func (agent *TCPAgent) Close() {
+	agent.Lock()
+	defer agent.Lock()
+
+	agent.dieOnce.Do(func() {
+		close(agent.die)
+		// close all peers
+		for k := range agent.peers {
+			agent.peers[k].Close()
+		}
+	})
+}
+
+// update is the consensus updater
+func (agent *TCPAgent) update() {
 	agent.Lock()
 	defer agent.Unlock()
 
@@ -127,7 +165,7 @@ func (agent *TCPAgent) Update() {
 	default:
 		// call consensus update
 		_ = agent.consensus.Update(time.Now())
-		timer.SystemTimedSched.Put(agent.Update, time.Now().Add(20*time.Millisecond))
+		timer.SystemTimedSched.Put(agent.update, time.Now().Add(20*time.Millisecond))
 	}
 }
 
@@ -140,14 +178,17 @@ func (agent *TCPAgent) handleConsensusMessage(bts []byte) error {
 
 // TCPPeer contains information related to a tcp connection peer
 type TCPPeer struct {
-	agent         *TCPAgent
-	connState     authenticationState // connection state
-	conn          net.Conn            // the connection to this peer
-	peerPublicKey *ecdsa.PublicKey    // the announced public key of the peer, only becomes valid if connState == connAuthenticated
+	agent          *TCPAgent           // the agent it belongs to
+	conn           net.Conn            // the connection to this peer
+	peerAuthStatus authenticationState // peer authentication status
+	// the announced public key of the peer, only becomes valid if peerAuthStatus == peerAuthenticated
+	peerPublicKey *ecdsa.PublicKey
+
+	// local authentication status
+	localAuthState authenticationState
 
 	// the challenge for the peer if peer requested key authentication
-	plaintext []byte
-	iv        []byte
+	challengePlainText []byte
 
 	// message queues and their notifications
 	consensusMessages  [][]byte      // all pending outgoing consensus messages to this peer
@@ -165,6 +206,7 @@ type TCPPeer struct {
 	sync.Mutex
 }
 
+// NewTCPPeer creates a TCPPeer with protocol over this connection
 func NewTCPPeer(conn net.Conn) *TCPPeer {
 	p := new(TCPPeer)
 	p.chConsensusMessage = make(chan struct{}, 1)
@@ -181,7 +223,7 @@ func NewTCPPeer(conn net.Conn) *TCPPeer {
 func (p *TCPPeer) GetPublicKey() *ecdsa.PublicKey {
 	p.Lock()
 	defer p.Unlock()
-	if p.connState == peerAuthenticated {
+	if p.peerAuthStatus == peerAuthenticated {
 		return p.peerPublicKey
 	}
 	return nil
@@ -223,7 +265,14 @@ func (p *TCPPeer) Close() {
 	})
 }
 
-// readLoop is for reading data from peer
+// InitiatePublicKeyAuthentication will initate a procedure to convince
+// the peer to trust my ownership of public key
+func (p *TCPPeer) InitiatePublicKeyAuthentication() {
+	if p.localAuthState == localNotAuthenticated {
+	}
+}
+
+// readLoop is for reading message packets from peer
 func (p *TCPPeer) readLoop() {
 	defer p.Close()
 	msgLength := make([]byte, MessageLength)
@@ -332,7 +381,7 @@ func (p *TCPPeer) handleGossip(msg *Gossip) error {
 func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 	// only when in init status, authentication process cannot rollback
 	// to prevent from malicious re-authentication
-	if p.connState == peerNotAuthenticated {
+	if p.peerAuthStatus == peerNotAuthenticated {
 		// create ephermal key for authentication
 		ephemeral, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
 		if err != nil {
@@ -348,15 +397,15 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 		p.peerPublicKey = &ecdsa.PublicKey{bdls.DefaultCurve, x, y}
 
 		// create challenge texts and encode
-		p.plaintext = make([]byte, ChallengeSize)
-		_, err = io.ReadFull(rand.Reader, p.plaintext)
+		p.challengePlainText = make([]byte, ChallengeSize)
+		_, err = io.ReadFull(rand.Reader, p.challengePlainText)
 		if err != nil {
 			panic(err)
 		}
 
 		// iv
-		p.iv = make([]byte, aes.BlockSize)
-		_, err = io.ReadFull(rand.Reader, p.iv)
+		iv := make([]byte, aes.BlockSize)
+		_, err = io.ReadFull(rand.Reader, iv)
 		if err != nil {
 			panic(err)
 		}
@@ -367,15 +416,15 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 			panic(err)
 		}
 
-		stream := cipher.NewCFBEncrypter(block, p.iv)
+		stream := cipher.NewCFBEncrypter(block, iv)
 		cipherText := make([]byte, ChallengeSize)
-		stream.XORKeyStream(cipherText, p.plaintext)
+		stream.XORKeyStream(cipherText, p.challengePlainText)
 
 		var challenge KeyAuthChallenge
 		challenge.X = ephemeral.PublicKey.X.Bytes()
 		challenge.Y = ephemeral.PublicKey.X.Bytes()
 		challenge.CipherText = cipherText
-		challenge.IV = p.iv
+		challenge.IV = iv
 
 		// proto marshal
 		bts, err := proto.Marshal(&challenge)
@@ -388,7 +437,7 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 		p.notifyInternalMessage()
 
 		// state shift
-		p.connState = peerAuthkeyReceived
+		p.peerAuthStatus = peerAuthkeyReceived
 		return nil
 	} else {
 		return ErrClientAuthKeyState
@@ -428,14 +477,13 @@ func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
 
 //
 func (p *TCPPeer) handleKeyAuthChallengeReply(response *KeyAuthChallengeReply) error {
-	if p.connState == peerAuthkeyReceived {
-		if bytes.Equal(p.plaintext, response.PlainText) {
-			p.plaintext = nil
-			p.iv = nil
-			p.connState = peerAuthenticated
+	if p.peerAuthStatus == peerAuthkeyReceived {
+		if bytes.Equal(p.challengePlainText, response.PlainText) {
+			p.challengePlainText = nil
+			p.peerAuthStatus = peerAuthenticated
 			return nil
 		} else {
-			p.connState = peerAuthenticatedFailed
+			p.peerAuthStatus = peerAuthenticatedFailed
 			return ErrInvalidClientResponse
 		}
 	} else {
