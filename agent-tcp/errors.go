@@ -34,6 +34,7 @@ import "errors"
 
 var (
 	ErrLocalKeyAuthInit             = errors.New("incorrect state for local KeyAuthInitmessage")
+	ErrKeyNotOnCurve                = errors.New("the public key is not on curve")
 	ErrPeerKeyAuthInit              = errors.New("incorrect state for peer KeyAuthInit message")
 	ErrPeerKeyAuthChallenge         = errors.New("incorrect state for peer KeyAuthChallenge message")
 	ErrPeerKeyAuthChallengeResponse = errors.New("incorrect state for peer KeyAuthChallengeResponse message")

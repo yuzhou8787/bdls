@@ -56,12 +56,10 @@ message KeyAuthChallenge {
 	// server ephermal publickey for client authentication
 	bytes X=1;
 	bytes Y=2;
-	// cipher text, the random bytes challenge, the owner of private key can decode this
-	bytes CipherText=3;	
-	// random iv
-	bytes IV=4;
+	// the challenge message, the peer can create the correct HMAC with this message
+	bytes Challenge=3;	
 }
 
 message KeyAuthChallengeReply{
-	bytes PlainText=1;
+	bytes HMAC=1;
 }
