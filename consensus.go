@@ -1459,9 +1459,9 @@ func (c *Consensus) CurrentProof() *SignedProto { return c.latestProof }
 // SetLatency sets participants expected latency for consensus core
 func (c *Consensus) SetLatency(latency time.Duration) { c.latency = latency }
 
-// AddPeer adds a peer to consensus for message delivery, a peer is
+// Join adds a peer to consensus for message delivery, a peer is
 // identified by its address.
-func (c *Consensus) AddPeer(p PeerInterface) bool {
+func (c *Consensus) Join(p PeerInterface) bool {
 	for k := range c.peers {
 		if p.RemoteAddr().String() == c.peers[k].RemoteAddr().String() {
 			return false
@@ -1472,8 +1472,8 @@ func (c *Consensus) AddPeer(p PeerInterface) bool {
 	return true
 }
 
-// RemovePeer removes a peer from consensus, identified by its address
-func (c *Consensus) RemovePeer(addr net.Addr) bool {
+// Leave removes a peer from consensus, identified by its address
+func (c *Consensus) Leave(addr net.Addr) bool {
 	for k := range c.peers {
 		if addr.String() == c.peers[k].RemoteAddr().String() {
 			copy(c.peers[k:], c.peers[k+1:])

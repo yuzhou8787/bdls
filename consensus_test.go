@@ -1007,7 +1007,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 		for i := 0; i < len(peers); i++ {
 			for j := 0; j < len(peers); j++ {
 				if i != j {
-					ok := peers[i].c.AddPeer(peers[j])
+					ok := peers[i].c.Join(peers[j])
 					assert.True(t, ok)
 					numConns++
 				}
