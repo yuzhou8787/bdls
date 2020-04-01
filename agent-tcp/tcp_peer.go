@@ -87,21 +87,21 @@ const (
 	localNotAuthenticated authenticationState = iota
 	// localSentAuthKey: we have sent auth key command to the peer
 	localAuthKeySent
-	// localChallengeReceived: we have received challenge from peer and responded
-	localChallengeReceived
+	// localChallengeAccepted: we have received challenge from peer and responded
+	localChallengeAccepted
 )
 
 // A TCPAgent binds consensus core to a TCPAgent object, which may have multiple TCPPeer
 type TCPAgent struct {
 	consensus           *bdls.Consensus   // the consensus core
 	privateKey          *ecdsa.PrivateKey // a private key to sign messages to this peer
-	peers               []*TCPPeer
-	consensusMessages   [][]byte
-	chConsensusMessages chan struct{}
+	peers               []*TCPPeer        // connected peers
+	consensusMessages   [][]byte          // all consensus message awaiting to be processed
+	chConsensusMessages chan struct{}     // notification of new consensus message
 
-	die     chan struct{}
-	dieOnce sync.Once
-	sync.Mutex
+	die        chan struct{} // tcp agent closing
+	dieOnce    sync.Once
+	sync.Mutex // fields lock
 }
 
 // NewTCPAgent initiate a TCPAgent which talks consensus protocol with peers
@@ -358,7 +358,6 @@ func (p *TCPPeer) InitiatePublicKeyAuthentication() error {
 
 // handleGossip will process all messages from this peer based on it's message types
 func (p *TCPPeer) handleGossip(msg *Gossip) error {
-
 	switch msg.Command {
 	case CommandType_NOP: // NOP can be used for connection keepalive
 	case CommandType_KEY_AUTH_INIT:
@@ -513,7 +512,7 @@ func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
 		p.notifyInternalMessage()
 
 		// state shift
-		p.localAuthState = localChallengeReceived
+		p.localAuthState = localChallengeAccepted
 		return nil
 	} else {
 		return ErrPeerKeyAuthChallenge
