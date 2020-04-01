@@ -30,13 +30,12 @@
 
 package agent
 
-import "errors"
-
-var (
-	ErrLocalKeyAuthInit             = errors.New("incorrect state for local KeyAuthInitmessage")
-	ErrPeerKeyAuthInit              = errors.New("incorrect state for peer KeyAuthInit message")
-	ErrPeerKeyAuthChallenge         = errors.New("incorrect state for peer KeyAuthChallenge message")
-	ErrPeerKeyAuthChallengeResponse = errors.New("incorrect state for peer KeyAuthChallengeResponse message")
-	ErrPeerAuthenticatedFailed      = errors.New("public key authentication failed for peer")
-	ErrMessageLengthExceed          = errors.New("message size exceeded maximum")
+import (
+	"crypto/ecdsa"
+	"math/big"
 )
+
+func ECDH(publicKey *ecdsa.PublicKey, key *ecdsa.PrivateKey) *big.Int {
+	secret, _ := key.Curve.ScalarMult(publicKey.X, publicKey.Y, key.D.Bytes())
+	return secret
+}

@@ -37,17 +37,26 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/binary"
+	fmt "fmt"
 	io "io"
 	"log"
 	"math/big"
 	"net"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/Sperax/bdls"
+	"github.com/Sperax/bdls/crypto/blake2b"
 	"github.com/Sperax/bdls/timer"
 	proto "github.com/gogo/protobuf/proto"
 )
+
+// fake address for Pipe
+type fakeAddress string
+
+func (fakeAddress) Network() string  { return "pipe" }
+func (f fakeAddress) String() string { return string(f) }
 
 const (
 	// Frame format:
@@ -58,8 +67,8 @@ const (
 	MaxMessageLength = 32 * 1024 * 1024
 
 	// timeout for a unresponsive connection
-	defaultReadTimeout  = 10 * time.Second
-	defaultWriteTimeout = 10 * time.Second
+	defaultReadTimeout  = 60 * time.Second
+	defaultWriteTimeout = 60 * time.Second
 
 	// ChallengeSize
 	ChallengeSize = 128
@@ -155,8 +164,8 @@ func (agent *TCPAgent) Close() {
 	})
 }
 
-// update is the consensus updater
-func (agent *TCPAgent) update() {
+// Update is the consensus updater
+func (agent *TCPAgent) Update() {
 	agent.Lock()
 	defer agent.Unlock()
 
@@ -165,8 +174,22 @@ func (agent *TCPAgent) update() {
 	default:
 		// call consensus update
 		_ = agent.consensus.Update(time.Now())
-		timer.SystemTimedSched.Put(agent.update, time.Now().Add(20*time.Millisecond))
+		timer.SystemTimedSched.Put(agent.Update, time.Now().Add(20*time.Millisecond))
 	}
+}
+
+// Propose a state, awaiting to be finalized at next height.
+func (agent *TCPAgent) Propose(s bdls.State) {
+	agent.Lock()
+	defer agent.Unlock()
+	agent.consensus.Propose(s)
+}
+
+// GetLatestState returns latest state
+func (agent *TCPAgent) GetLatestState() (height uint64, round uint64, data bdls.State) {
+	agent.Lock()
+	defer agent.Unlock()
+	return agent.consensus.CurrentState()
 }
 
 // handleConsensusMessage will be called if TCPPeer received a consensus message
@@ -207,32 +230,40 @@ type TCPPeer struct {
 }
 
 // NewTCPPeer creates a TCPPeer with protocol over this connection
-func NewTCPPeer(conn net.Conn) *TCPPeer {
+func NewTCPPeer(conn net.Conn, agent *TCPAgent) *TCPPeer {
 	p := new(TCPPeer)
 	p.chConsensusMessage = make(chan struct{}, 1)
 	p.chInternalMessage = make(chan struct{}, 1)
 	p.conn = conn
+	p.agent = agent
 	p.die = make(chan struct{})
-	// we start readLoop first
+	// we start readLoop & sendLoop for each connection
 	go p.readLoop()
 	go p.sendLoop()
 	return p
 }
 
-// GetPublicKey returns peer's public key as identity
+// RemoteAddr implements PeerInterface, GetPublicKey returns peer's
+// public key, returns nil if peer's has not authenticated it's public-key
 func (p *TCPPeer) GetPublicKey() *ecdsa.PublicKey {
 	p.Lock()
 	defer p.Unlock()
 	if p.peerAuthStatus == peerAuthenticated {
+		log.Println("get public key:", p.peerPublicKey)
 		return p.peerPublicKey
 	}
 	return nil
 }
 
-// RemoteAddr should return peer's address as identity
-func (p *TCPPeer) RemoteAddr() net.Addr { return p.conn.RemoteAddr() }
+// RemoteAddr implements PeerInterface, returns peer's address as connection identity
+func (p *TCPPeer) RemoteAddr() net.Addr {
+	if p.conn.RemoteAddr().Network() == "pipe" {
+		return fakeAddress(fmt.Sprint(unsafe.Pointer(p)))
+	}
+	return p.conn.RemoteAddr()
+}
 
-// Send message to this peer
+// Send implements PeerInterface, to send message to this peer
 func (p *TCPPeer) Send(out []byte) error {
 	p.Lock()
 	defer p.Unlock()
@@ -241,7 +272,7 @@ func (p *TCPPeer) Send(out []byte) error {
 	return nil
 }
 
-// notifyConsensusMessage output
+// notifyConsensusMessage notifies there're message pending to send
 func (p *TCPPeer) notifyConsensusMessage() {
 	select {
 	case p.chConsensusMessage <- struct{}{}:
@@ -249,7 +280,7 @@ func (p *TCPPeer) notifyConsensusMessage() {
 	}
 }
 
-// notifyConsensusMessage output
+// notifyInternalMessage, notifies there're internal messages pending to send
 func (p *TCPPeer) notifyInternalMessage() {
 	select {
 	case p.chInternalMessage <- struct{}{}:
@@ -266,62 +297,33 @@ func (p *TCPPeer) Close() {
 }
 
 // InitiatePublicKeyAuthentication will initate a procedure to convince
-// the peer to trust my ownership of public key
-func (p *TCPPeer) InitiatePublicKeyAuthentication() {
+// the other peer to trust my ownership of public key
+func (p *TCPPeer) InitiatePublicKeyAuthentication() error {
 	if p.localAuthState == localNotAuthenticated {
-	}
-}
+		auth := KeyAuthInit{}
+		auth.X = p.agent.privateKey.PublicKey.X.Bytes()
+		auth.Y = p.agent.privateKey.PublicKey.Y.Bytes()
 
-// readLoop is for reading message packets from peer
-func (p *TCPPeer) readLoop() {
-	defer p.Close()
-	msgLength := make([]byte, MessageLength)
-
-	for {
-		select {
-		case <-p.die:
-			return
-		default:
-			// read message size
-			p.conn.SetReadDeadline(time.Now().Add(defaultReadTimeout))
-			_, err := io.ReadFull(p.conn, msgLength)
-			if err != nil {
-				return
-			}
-
-			// check length
-			length := binary.LittleEndian.Uint32(msgLength)
-			if length > MaxMessageLength {
-				log.Println(err)
-			}
-
-			if length == 0 {
-				log.Println("zero length")
-				return
-			}
-
-			// read message bytes
-			p.conn.SetReadDeadline(time.Now().Add(defaultReadTimeout))
-			bts := make([]byte, length)
-			_, err = io.ReadFull(p.conn, bts)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			// unmarshal bytes to message
-			var gossip Gossip
-			err = proto.Unmarshal(bts, &gossip)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			err = p.handleGossip(&gossip)
-			if err != nil {
-				log.Println(err)
-			}
+		// proto marshal
+		bts, err := proto.Marshal(&auth)
+		if err != nil {
+			panic(err)
 		}
+
+		g := Gossip{Command: CommandType_KEY_AUTH_INIT, Message: bts}
+		// proto marshal
+		out, err := proto.Marshal(&g)
+		if err != nil {
+			panic(err)
+		}
+
+		// enqueue
+		p.internalMessages = append(p.internalMessages, out)
+		p.notifyInternalMessage()
+		p.localAuthState = localAuthKeySent
+		return nil
+	} else {
+		return ErrPeerKeyAuthInit
 	}
 }
 
@@ -373,28 +375,26 @@ func (p *TCPPeer) handleGossip(msg *Gossip) error {
 	case CommandType_CONSENSUS:
 		// a consensus message
 		p.agent.handleConsensusMessage(msg.Message)
+	default:
+		log.Println("msg", msg.Command)
 	}
 	return nil
 }
 
-// handleKeyAuthInit handles public key authentication request initiated from this peer
+// peer initiated key authentication
 func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 	// only when in init status, authentication process cannot rollback
 	// to prevent from malicious re-authentication
 	if p.peerAuthStatus == peerNotAuthenticated {
+		// stored announced key
+		p.peerPublicKey = &ecdsa.PublicKey{bdls.DefaultCurve, big.NewInt(0).SetBytes(authKey.X), big.NewInt(0).SetBytes(authKey.Y)}
 		// create ephermal key for authentication
 		ephemeral, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
 		if err != nil {
 			panic(err)
 		}
-
-		// ECDH
-		x := big.NewInt(0).SetBytes(authKey.X)
-		y := big.NewInt(0).SetBytes(authKey.Y)
-		secret, _ := bdls.DefaultCurve.ScalarMult(x, y, ephemeral.D.Bytes())
-
-		// stored announced key
-		p.peerPublicKey = &ecdsa.PublicKey{bdls.DefaultCurve, x, y}
+		// derive secret
+		secret := ECDH(p.peerPublicKey, ephemeral)
 
 		// create challenge texts and encode
 		p.challengePlainText = make([]byte, ChallengeSize)
@@ -410,8 +410,11 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 			panic(err)
 		}
 
+		// sha the secret to create fixed 32bytes key
+		key := blake2b.Sum256(secret.Bytes())
+
 		// encrypt using AES-256-CFB
-		block, err := aes.NewCipher(secret.Bytes())
+		block, err := aes.NewCipher(key[:])
 		if err != nil {
 			panic(err)
 		}
@@ -422,7 +425,7 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 
 		var challenge KeyAuthChallenge
 		challenge.X = ephemeral.PublicKey.X.Bytes()
-		challenge.Y = ephemeral.PublicKey.X.Bytes()
+		challenge.Y = ephemeral.PublicKey.Y.Bytes()
 		challenge.CipherText = cipherText
 		challenge.IV = iv
 
@@ -432,50 +435,73 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 			panic(err)
 		}
 
+		g := Gossip{Command: CommandType_KEY_AUTH_CHALLENGE, Message: bts}
+		// proto marshal
+		out, err := proto.Marshal(&g)
+		if err != nil {
+			panic(err)
+		}
+
 		// enqueue
-		p.internalMessages = append(p.internalMessages, bts)
+		p.internalMessages = append(p.internalMessages, out)
 		p.notifyInternalMessage()
 
 		// state shift
 		p.peerAuthStatus = peerAuthkeyReceived
 		return nil
 	} else {
-		return ErrClientAuthKeyState
+		return ErrPeerKeyAuthInit
 	}
 }
 
-// handleKeyAuthChallenge will accept the challenge from the peer
+// peer issued a challenge to me
 func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
-	// use ECDH to recover shared-key
-	x := big.NewInt(0).SetBytes(challenge.X)
-	y := big.NewInt(0).SetBytes(challenge.Y)
-	secret, _ := bdls.DefaultCurve.ScalarMult(x, y, p.agent.privateKey.D.Bytes())
+	if p.localAuthState == localAuthKeySent {
+		// use ECDH to recover shared-key
+		pubkey := &ecdsa.PublicKey{bdls.DefaultCurve, big.NewInt(0).SetBytes(challenge.X), big.NewInt(0).SetBytes(challenge.Y)}
+		// derive secret with my private key
+		secret := ECDH(pubkey, p.agent.privateKey)
 
-	// decrypt using AES-256-CFB with shared-key
-	block, err := aes.NewCipher(secret.Bytes())
-	if err != nil {
-		panic(err)
+		// sha the secret to create fixed 32bytes key
+		key := blake2b.Sum256(secret.Bytes())
+		// decrypt using AES-256-CFB with shared-key
+		block, err := aes.NewCipher(key[:])
+		if err != nil {
+			panic(err)
+		}
+		stream := cipher.NewCFBDecrypter(block, challenge.IV)
+		stream.XORKeyStream(challenge.CipherText, challenge.CipherText)
+
+		// send back client challenge response
+		var response KeyAuthChallengeReply
+		response.PlainText = challenge.CipherText
+
+		// proto marshal
+		bts, err := proto.Marshal(&response)
+		if err != nil {
+			panic(err)
+		}
+
+		g := Gossip{Command: CommandType_KEY_AUTH_CHALLENGE_REPLY, Message: bts}
+		// proto marshal
+		out, err := proto.Marshal(&g)
+		if err != nil {
+			panic(err)
+		}
+
+		// enqueue
+		p.internalMessages = append(p.internalMessages, out)
+		p.notifyInternalMessage()
+
+		// state shift
+		p.localAuthState = localChallengeReceived
+		return nil
+	} else {
+		return ErrPeerKeyAuthChallenge
 	}
-	stream := cipher.NewCFBDecrypter(block, challenge.IV)
-	stream.XORKeyStream(challenge.CipherText, challenge.CipherText)
-
-	// send back client challenge response
-	var response KeyAuthChallengeReply
-	response.PlainText = challenge.CipherText
-
-	// proto marshal
-	bts, err := proto.Marshal(&response)
-	if err != nil {
-		panic(err)
-	}
-
-	// enqueue
-	p.internalMessages = append(p.internalMessages, bts)
-	p.notifyInternalMessage()
-	return nil
 }
 
-//
+// peer replieds my challenge
 func (p *TCPPeer) handleKeyAuthChallengeReply(response *KeyAuthChallengeReply) error {
 	if p.peerAuthStatus == peerAuthkeyReceived {
 		if bytes.Equal(p.challengePlainText, response.PlainText) {
@@ -484,10 +510,65 @@ func (p *TCPPeer) handleKeyAuthChallengeReply(response *KeyAuthChallengeReply) e
 			return nil
 		} else {
 			p.peerAuthStatus = peerAuthenticatedFailed
-			return ErrInvalidClientResponse
+			log.Println("perr authenticated failed")
+			return ErrPeerAuthenticatedFailed
 		}
 	} else {
-		return ErrClientAuthKeyState
+		return ErrPeerKeyAuthInit
+	}
+}
+
+// readLoop is for reading message packets from peer
+func (p *TCPPeer) readLoop() {
+	defer p.Close()
+	msgLength := make([]byte, MessageLength)
+
+	for {
+		select {
+		case <-p.die:
+			return
+		default:
+			// read message size
+			p.conn.SetReadDeadline(time.Now().Add(defaultReadTimeout))
+			_, err := io.ReadFull(p.conn, msgLength)
+			if err != nil {
+				log.Println("readfull:", err)
+				return
+			}
+
+			// check length
+			length := binary.LittleEndian.Uint32(msgLength)
+			if length > MaxMessageLength {
+				log.Println(err)
+			}
+
+			if length == 0 {
+				log.Println("zero length")
+				return
+			}
+
+			// read message bytes
+			p.conn.SetReadDeadline(time.Now().Add(defaultReadTimeout))
+			bts := make([]byte, length)
+			_, err = io.ReadFull(p.conn, bts)
+			if err != nil {
+				log.Println("readfull:", err)
+				return
+			}
+
+			// unmarshal bytes to message
+			var gossip Gossip
+			err = proto.Unmarshal(bts, &gossip)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			err = p.handleGossip(&gossip)
+			if err != nil {
+				log.Println(err)
+			}
+		}
 	}
 }
 
@@ -525,31 +606,36 @@ func (p *TCPPeer) sendLoop() {
 				// write length
 				_, err = p.conn.Write(msgLength)
 				if err != nil {
-					log.Println(err)
+					log.Println("write:", err)
 					return
 				}
 
 				// write message
 				_, err = p.conn.Write(out)
 				if err != nil {
-					log.Println(err)
+					log.Println("write:", err)
 					return
 				}
 			}
 		case <-p.chInternalMessage:
+			p.Lock()
+			pending = p.internalMessages
+			p.internalMessages = nil
+			p.Unlock()
+
 			for _, bts := range pending {
 				binary.LittleEndian.PutUint32(msgLength, uint32(len(bts)))
 				// write length
 				_, err := p.conn.Write(msgLength)
 				if err != nil {
-					log.Println(err)
+					log.Println("write:", err)
 					return
 				}
 
 				// write message
 				_, err = p.conn.Write(bts)
 				if err != nil {
-					log.Println(err)
+					log.Println("write:", err)
 					return
 				}
 			}
