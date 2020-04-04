@@ -244,9 +244,9 @@ type TCPPeer struct {
 	consensusMessages  [][]byte      // all pending outgoing consensus messages to this peer
 	chConsensusMessage chan struct{} // notification on new consensus data
 
-	// internal
-	internalMessages  [][]byte      // all pending outgoing internal messages to this peer.
-	chInternalMessage chan struct{} // notification on new internal exchange data
+	// agent messages
+	agentMessages  [][]byte      // all pending outgoing agent messages to this peer.
+	chAgentMessage chan struct{} // notification on new agent exchange messages
 
 	// peer closing signal
 	die     chan struct{}
@@ -260,7 +260,7 @@ type TCPPeer struct {
 func NewTCPPeer(conn net.Conn, agent *TCPAgent) *TCPPeer {
 	p := new(TCPPeer)
 	p.chConsensusMessage = make(chan struct{}, 1)
-	p.chInternalMessage = make(chan struct{}, 1)
+	p.chAgentMessage = make(chan struct{}, 1)
 	p.conn = conn
 	p.agent = agent
 	p.die = make(chan struct{})
@@ -307,10 +307,10 @@ func (p *TCPPeer) notifyConsensusMessage() {
 	}
 }
 
-// notifyInternalMessage, notifies there're internal messages pending to send
-func (p *TCPPeer) notifyInternalMessage() {
+// notifyAgentMessage, notifies there're agent messages pending to send
+func (p *TCPPeer) notifyAgentMessage() {
 	select {
-	case p.chInternalMessage <- struct{}{}:
+	case p.chAgentMessage <- struct{}{}:
 	default:
 	}
 }
@@ -347,8 +347,8 @@ func (p *TCPPeer) InitiatePublicKeyAuthentication() error {
 		}
 
 		// enqueue
-		p.internalMessages = append(p.internalMessages, out)
-		p.notifyInternalMessage()
+		p.agentMessages = append(p.agentMessages, out)
+		p.notifyAgentMessage()
 		p.localAuthState = localAuthKeySent
 		return nil
 	} else {
@@ -464,8 +464,8 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 		}
 
 		// enqueue
-		p.internalMessages = append(p.internalMessages, out)
-		p.notifyInternalMessage()
+		p.agentMessages = append(p.agentMessages, out)
+		p.notifyAgentMessage()
 
 		// state shift
 		p.peerAuthStatus = peerAuthkeyReceived
@@ -508,8 +508,8 @@ func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
 		}
 
 		// enqueue
-		p.internalMessages = append(p.internalMessages, out)
-		p.notifyInternalMessage()
+		p.agentMessages = append(p.agentMessages, out)
+		p.notifyAgentMessage()
 
 		// state shift
 		p.localAuthState = localChallengeAccepted
@@ -632,10 +632,10 @@ func (p *TCPPeer) sendLoop() {
 					return
 				}
 			}
-		case <-p.chInternalMessage:
+		case <-p.chAgentMessage:
 			p.Lock()
-			pending = p.internalMessages
-			p.internalMessages = nil
+			pending = p.agentMessages
+			p.agentMessages = nil
 			p.Unlock()
 
 			for _, bts := range pending {
