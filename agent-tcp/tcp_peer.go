@@ -62,8 +62,8 @@ const (
 	defaultReadTimeout  = 60 * time.Second
 	defaultWriteTimeout = 60 * time.Second
 
-	// ChallengeSize
-	ChallengeSize = 1024
+	// challengeSize
+	challengeSize = 1024
 )
 
 // authenticationState is the authentication status for both peer
@@ -94,7 +94,7 @@ const (
 // A TCPAgent binds consensus core to a TCPAgent object, which may have multiple TCPPeer
 type TCPAgent struct {
 	consensus           *bdls.Consensus   // the consensus core
-	privateKey          *ecdsa.PrivateKey // a private key to sign messages to this peer
+	privateKey          *ecdsa.PrivateKey // a private key to sign messages
 	peers               []*TCPPeer        // connected peers
 	consensusMessages   [][]byte          // all consensus message awaiting to be processed
 	chConsensusMessages chan struct{}     // notification of new consensus message
@@ -111,7 +111,7 @@ func NewTCPAgent(consensus *bdls.Consensus, privateKey *ecdsa.PrivateKey) *TCPAg
 	agent.privateKey = privateKey
 	agent.die = make(chan struct{})
 	agent.chConsensusMessages = make(chan struct{}, 1)
-	go agent.readLoop()
+	go agent.receiveLoop()
 	return agent
 }
 
@@ -202,7 +202,8 @@ func (agent *TCPAgent) notifyConsensus() {
 	}
 }
 
-func (agent *TCPAgent) readLoop() {
+// consensus message receiver
+func (agent *TCPAgent) receiveLoop() {
 	for {
 		select {
 		case <-agent.chConsensusMessages:
@@ -226,7 +227,7 @@ type fakeAddress string
 func (fakeAddress) Network() string  { return "pipe" }
 func (f fakeAddress) String() string { return string(f) }
 
-// TCPPeer contains information related to a tcp connection peer
+// TCPPeer represents a peer(endpoint) related to a tcp connection
 type TCPPeer struct {
 	agent          *TCPAgent           // the agent it belongs to
 	conn           net.Conn            // the connection to this peer
@@ -299,7 +300,7 @@ func (p *TCPPeer) Send(out []byte) error {
 	return nil
 }
 
-// notifyConsensusMessage notifies there're message pending to send
+// notifyConsensusMessage notifies goroutines there're messages pending to send
 func (p *TCPPeer) notifyConsensusMessage() {
 	select {
 	case p.chConsensusMessage <- struct{}{}:
@@ -307,7 +308,7 @@ func (p *TCPPeer) notifyConsensusMessage() {
 	}
 }
 
-// notifyAgentMessage, notifies there're agent messages pending to send
+// notifyAgentMessage, notifies goroutines there're agent messages pending to send
 func (p *TCPPeer) notifyAgentMessage() {
 	select {
 	case p.chAgentMessage <- struct{}{}:
@@ -361,7 +362,7 @@ func (p *TCPPeer) handleGossip(msg *Gossip) error {
 	switch msg.Command {
 	case CommandType_NOP: // NOP can be used for connection keepalive
 	case CommandType_KEY_AUTH_INIT:
-		// peer wants to authenticate it's publickey
+		// this peer initated it's publickey authentication
 		var m KeyAuthInit
 		err := proto.Unmarshal(msg.Message, &m)
 		if err != nil {
@@ -373,7 +374,7 @@ func (p *TCPPeer) handleGossip(msg *Gossip) error {
 			return err
 		}
 	case CommandType_KEY_AUTH_CHALLENGE:
-		// I received a challenge from peer
+		// received a challenge from this peer
 		var m KeyAuthChallenge
 		err := proto.Unmarshal(msg.Message, &m)
 		if err != nil {
@@ -386,7 +387,7 @@ func (p *TCPPeer) handleGossip(msg *Gossip) error {
 		}
 
 	case CommandType_KEY_AUTH_CHALLENGE_REPLY:
-		// peer sends back a challenge reply to authenticate it's publickey
+		// this peer sends back a challenge reply to authenticate it's publickey
 		var m KeyAuthChallengeReply
 		err := proto.Unmarshal(msg.Message, &m)
 		if err != nil {
@@ -399,10 +400,10 @@ func (p *TCPPeer) handleGossip(msg *Gossip) error {
 		}
 
 	case CommandType_CONSENSUS:
-		// a consensus message
+		// received a consensus message from this peer
 		p.agent.handleConsensusMessage(msg.Message)
 	default:
-		log.Println("msg", msg.Command)
+		panic(msg)
 	}
 	return nil
 }
@@ -412,7 +413,7 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 	p.Lock()
 	defer p.Unlock()
 	// only when in init status, authentication process cannot rollback
-	// to prevent from malicious re-authentication
+	// to prevent from malicious re-authentication DoS
 	if p.peerAuthStatus == peerNotAuthenticated {
 		peerPublicKey := &ecdsa.PublicKey{Curve: bdls.DefaultCurve, X: big.NewInt(0).SetBytes(authKey.X), Y: big.NewInt(0).SetBytes(authKey.Y)}
 
@@ -436,7 +437,7 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 		var challenge KeyAuthChallenge
 		challenge.X = ephemeral.PublicKey.X.Bytes()
 		challenge.Y = ephemeral.PublicKey.Y.Bytes()
-		challenge.Challenge = make([]byte, ChallengeSize)
+		challenge.Challenge = make([]byte, challengeSize)
 		_, err = io.ReadFull(rand.Reader, challenge.Challenge)
 		if err != nil {
 			panic(err)
@@ -475,7 +476,7 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 	}
 }
 
-// peer issued a challenge to me
+// handle key authentication challenge
 func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
 	p.Lock()
 	defer p.Unlock()
@@ -519,7 +520,7 @@ func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
 	}
 }
 
-// peer replied my challenge
+// handle key authentication challenge reply
 func (p *TCPPeer) handleKeyAuthChallengeReply(response *KeyAuthChallengeReply) error {
 	p.Lock()
 	defer p.Unlock()
@@ -537,7 +538,7 @@ func (p *TCPPeer) handleKeyAuthChallengeReply(response *KeyAuthChallengeReply) e
 	}
 }
 
-// readLoop is for reading message packets from peer
+// readLoop keeps reading messages from peer
 func (p *TCPPeer) readLoop() {
 	defer p.Close()
 	msgLength := make([]byte, MessageLength)
@@ -558,6 +559,7 @@ func (p *TCPPeer) readLoop() {
 			length := binary.LittleEndian.Uint32(msgLength)
 			if length > MaxMessageLength {
 				log.Println(err)
+				return
 			}
 
 			if length == 0 {
@@ -584,12 +586,13 @@ func (p *TCPPeer) readLoop() {
 			err = p.handleGossip(&gossip)
 			if err != nil {
 				log.Println(err)
+				return
 			}
 		}
 	}
 }
 
-// sendLoop for consensus message transmission
+// sendLoop keeps sending consensus message to this peer
 func (p *TCPPeer) sendLoop() {
 	defer p.Close()
 
