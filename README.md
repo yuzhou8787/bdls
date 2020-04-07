@@ -32,6 +32,7 @@ y = f(x, t), where 'x' is the message it received, and 't' is the time while bei
 it has been designed in a deterministic scheme, without parallel computing, networking, and
 the correctness of program implementation can be proven with proper test cases.
 
+For more information on the BDLS consensus, you could view here https://medium.com/sperax/bdls-protocol-best-efficiency-best-security-best-performance-4cc2770608dd
 
 ## Features
 
