@@ -168,7 +168,7 @@ func (agent *TCPAgent) Update() {
 	case <-agent.die:
 	default:
 		// call consensus update
-		_ = agent.consensus.Update(time.Now())
+		agent.consensus.Update(time.Now())
 		timer.SystemTimedSched.Put(agent.Update, time.Now().Add(20*time.Millisecond))
 	}
 }

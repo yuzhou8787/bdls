@@ -149,6 +149,7 @@ func main() {
 					if id >= len(quorum.Keys) {
 						return errors.New(fmt.Sprint("cannot locate private key for id:", id))
 					}
+					log.Println("identity:", id)
 
 					// create configuration
 					config := new(bdls.Config)
@@ -172,104 +173,8 @@ func main() {
 						config.Participants = append(config.Participants, &priv.PublicKey)
 					}
 
-					// create consensus
-					consensus, err := bdls.NewConsensus(config)
-					if err != nil {
-						return err
-					}
-					consensus.SetLatency(200 * time.Millisecond)
-
-					// load endpoints
-					file, err = os.Open(c.String("peers"))
-					if err != nil {
-						return err
-					}
-					defer file.Close()
-
-					var peers []string
-					err = json.NewDecoder(file).Decode(&peers)
-					if err != nil {
-						return err
-					}
-
-					// start listener
-					tcpaddr, err := net.ResolveTCPAddr("tcp", c.String("listen"))
-					if err != nil {
-						return err
-					}
-
-					l, err := net.ListenTCP("tcp", tcpaddr)
-					if err != nil {
-						return err
-					}
-					log.Println("listening on:", tcpaddr)
-					log.Println("identity:", id)
-
-					// initiate tcp agent
-					tagent := agent.NewTCPAgent(consensus, config.PrivateKey)
-					if err != nil {
-						return err
-					}
-
-					// start updater
-					tagent.Update()
-
-					// passive connection from peers
-					go func() {
-						for {
-							conn, err := l.Accept()
-							if err != nil {
-								panic(err)
-							}
-							log.Println("passive peer:", conn.RemoteAddr())
-							// peer endpoint created
-							p := agent.NewTCPPeer(conn, tagent)
-							tagent.AddPeer(p)
-							// prove my identity to this peer
-							p.InitiatePublicKeyAuthentication()
-						}
-					}()
-
-					// active connections to peers
-					for k := range peers {
-						go func(raddr string) {
-							for {
-								conn, err := net.Dial("tcp", raddr)
-								if err == nil {
-									log.Println("active peer:", conn.RemoteAddr())
-									// peer endpoint created
-									p := agent.NewTCPPeer(conn, tagent)
-									tagent.AddPeer(p)
-									// prove my identity to this peer
-									p.InitiatePublicKeyAuthentication()
-									return
-								}
-
-								log.Println(err)
-								<-time.After(time.Second)
-							}
-						}(peers[k])
-					}
-
-					var height uint64
-				PROPOSE:
 					for {
-						data := make([]byte, 1024)
-						io.ReadFull(rand.Reader, data)
-						tagent.Propose(data)
-
-						for {
-							newHeight, newRound, newState := tagent.GetLatestState()
-							if newHeight > height {
-								now := time.Now()
-								h := blake2b.Sum256(newState)
-								log.Printf("%v <decide> at height:%v round:%v hash:%v", now.Format("15:04:05"), newHeight, newRound, hex.EncodeToString(h[:]))
-								height = newHeight
-								continue PROPOSE
-							}
-							// wait
-							<-time.After(20 * time.Millisecond)
-						}
+						consensusOneRound(c, config)
 					}
 				},
 			},
@@ -286,4 +191,107 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+// consensus for one round with full procedure
+func consensusOneRound(c *cli.Context, config *bdls.Config) error {
+	// create consensus
+	consensus, err := bdls.NewConsensus(config)
+	if err != nil {
+		return err
+	}
+	consensus.SetLatency(200 * time.Millisecond)
+
+	// load endpoints
+	file, err := os.Open(c.String("peers"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var peers []string
+	err = json.NewDecoder(file).Decode(&peers)
+	if err != nil {
+		return err
+	}
+
+	// start listener
+	tcpaddr, err := net.ResolveTCPAddr("tcp", c.String("listen"))
+	if err != nil {
+		return err
+	}
+
+	l, err := net.ListenTCP("tcp", tcpaddr)
+	if err != nil {
+		return err
+	}
+	log.Println("listening on:", tcpaddr)
+	defer l.Close()
+
+	// initiate tcp agent
+	tagent := agent.NewTCPAgent(consensus, config.PrivateKey)
+	if err != nil {
+		return err
+	}
+
+	// start updater
+	tagent.Update()
+
+	// passive connection from peers
+	go func() {
+		for {
+			conn, err := l.Accept()
+			if err != nil {
+				return
+			}
+			log.Println("peer connected from:", conn.RemoteAddr())
+			// peer endpoint created
+			p := agent.NewTCPPeer(conn, tagent)
+			tagent.AddPeer(p)
+			// prove my identity to this peer
+			p.InitiatePublicKeyAuthentication()
+		}
+	}()
+
+	// active connections to peers
+	for k := range peers {
+		go func(raddr string) {
+			for {
+				conn, err := net.Dial("tcp", raddr)
+				if err == nil {
+					log.Println("connected to peer:", conn.RemoteAddr())
+					// peer endpoint created
+					p := agent.NewTCPPeer(conn, tagent)
+					tagent.AddPeer(p)
+					// prove my identity to this peer
+					p.InitiatePublicKeyAuthentication()
+					return
+				}
+				<-time.After(time.Second)
+			}
+		}(peers[k])
+	}
+
+	for {
+		data := make([]byte, 1024)
+		io.ReadFull(rand.Reader, data)
+		tagent.Propose(data)
+
+		for {
+			newHeight, newRound, newState := tagent.GetLatestState()
+			if newHeight > 0 {
+				h := blake2b.Sum256(newState)
+				log.Printf("<decide> at round:%v hash:%v", newRound, hex.EncodeToString(h[:]))
+				// re-initated consensus core to make sure we always on height 1
+				consensus, err := bdls.NewConsensus(config)
+				if err != nil {
+					return err
+				}
+				consensus.SetLatency(200 * time.Millisecond)
+				return nil
+			}
+			// wait
+			<-time.After(20 * time.Millisecond)
+		}
+	}
 }
