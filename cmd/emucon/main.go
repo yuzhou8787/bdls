@@ -173,9 +173,10 @@ func main() {
 						config.Participants = append(config.Participants, &priv.PublicKey)
 					}
 
-					for {
-						consensusOneRound(c, config)
+					if err := startConsensus(c, config); err != nil {
+						return err
 					}
+					return nil
 				},
 			},
 		},
@@ -194,7 +195,7 @@ func main() {
 }
 
 // consensus for one round with full procedure
-func consensusOneRound(c *cli.Context, config *bdls.Config) error {
+func startConsensus(c *cli.Context, config *bdls.Config) error {
 	// create consensus
 	consensus, err := bdls.NewConsensus(config)
 	if err != nil {
@@ -225,8 +226,8 @@ func consensusOneRound(c *cli.Context, config *bdls.Config) error {
 	if err != nil {
 		return err
 	}
-	log.Println("listening on:", tcpaddr)
 	defer l.Close()
+	log.Println("listening on:", c.String("listen"))
 
 	// initiate tcp agent
 	tagent := agent.NewTCPAgent(consensus, config.PrivateKey)
@@ -272,6 +273,9 @@ func consensusOneRound(c *cli.Context, config *bdls.Config) error {
 		}(peers[k])
 	}
 
+	lastHeight := uint64(0)
+
+NEXTHEIGHT:
 	for {
 		data := make([]byte, 1024)
 		io.ReadFull(rand.Reader, data)
@@ -279,16 +283,11 @@ func consensusOneRound(c *cli.Context, config *bdls.Config) error {
 
 		for {
 			newHeight, newRound, newState := tagent.GetLatestState()
-			if newHeight > 0 {
+			if newHeight > lastHeight {
 				h := blake2b.Sum256(newState)
-				log.Printf("<decide> at round:%v hash:%v", newRound, hex.EncodeToString(h[:]))
-				// re-initated consensus core to make sure we always on height 1
-				consensus, err := bdls.NewConsensus(config)
-				if err != nil {
-					return err
-				}
-				consensus.SetLatency(200 * time.Millisecond)
-				return nil
+				log.Printf("<decide> at height:%v round:%v hash:%v", newHeight, newRound, hex.EncodeToString(h[:]))
+				lastHeight = newHeight
+				continue NEXTHEIGHT
 			}
 			// wait
 			<-time.After(20 * time.Millisecond)

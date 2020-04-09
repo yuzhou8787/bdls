@@ -111,7 +111,7 @@ func NewTCPAgent(consensus *bdls.Consensus, privateKey *ecdsa.PrivateKey) *TCPAg
 	agent.privateKey = privateKey
 	agent.die = make(chan struct{})
 	agent.chConsensusMessages = make(chan struct{}, 1)
-	go agent.receiveLoop()
+	go agent.inputConsensusMessage()
 	return agent
 }
 
@@ -139,7 +139,7 @@ func (agent *TCPAgent) RemovePeer(p *TCPPeer) bool {
 		if agent.peers[k].RemoteAddr().String() == peerAddress {
 			copy(agent.peers[k:], agent.peers[k+1:])
 			agent.peers = agent.peers[:len(agent.peers)-1]
-			return true
+			return agent.consensus.Leave(p.RemoteAddr())
 		}
 	}
 	return false
@@ -203,7 +203,7 @@ func (agent *TCPAgent) notifyConsensus() {
 }
 
 // consensus message receiver
-func (agent *TCPAgent) receiveLoop() {
+func (agent *TCPAgent) inputConsensusMessage() {
 	for {
 		select {
 		case <-agent.chConsensusMessages:
@@ -322,6 +322,7 @@ func (p *TCPPeer) Close() {
 		p.conn.Close()
 		close(p.die)
 	})
+	go p.agent.RemovePeer(p)
 }
 
 // InitiatePublicKeyAuthentication will initate a procedure to convince
@@ -626,12 +627,14 @@ func (p *TCPPeer) sendLoop() {
 				// write length
 				_, err = p.conn.Write(msgLength)
 				if err != nil {
+					log.Println(err)
 					return
 				}
 
 				// write message
 				_, err = p.conn.Write(out)
 				if err != nil {
+					log.Println(err)
 					return
 				}
 			}
@@ -646,12 +649,14 @@ func (p *TCPPeer) sendLoop() {
 				// write length
 				_, err := p.conn.Write(msgLength)
 				if err != nil {
+					log.Println(err)
 					return
 				}
 
 				// write message
 				_, err = p.conn.Write(bts)
 				if err != nil {
+					log.Println(err)
 					return
 				}
 			}
