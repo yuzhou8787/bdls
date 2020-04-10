@@ -59,22 +59,22 @@ type Quorum struct {
 func main() {
 	app := &cli.App{
 		Name:                 "BDLS consensus protocol emulator",
-		Usage:                "Act as a real participant in BDLS consensus procedure via TCP",
+		Usage:                "Generate quorum then emulate participants",
 		EnableBashCompletion: true,
 		Commands: []*cli.Command{
 			{
 				Name:  "genkeys",
-				Usage: "generate identies group to participant in consensus",
+				Usage: "generate quorum to participant in consensus",
 				Flags: []cli.Flag{
 					&cli.IntFlag{
 						Name:  "count",
 						Value: 4,
-						Usage: "number of participant to generate",
+						Usage: "number of participant in quorum",
 					},
 					&cli.StringFlag{
 						Name:  "config",
 						Value: "./quorum.json",
-						Usage: "output quorum file, choose one(number) as a participant to use play the role",
+						Usage: "output quorum file",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -128,7 +128,7 @@ func main() {
 					&cli.StringFlag{
 						Name:  "peers",
 						Value: "./peers.json",
-						Usage: "the peers ip list to connect",
+						Usage: "all peers's ip:port list to connect, as a json array",
 					},
 				},
 				Action: func(c *cli.Context) error {
