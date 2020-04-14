@@ -7,13 +7,13 @@ $go get -u github.com/Sperax/bdls/cmd/emucon
 
 $ emucon
 NAME:
-   BDLS consensus protocol emulator - Act as a real participant in BDLS consensus procedure via TCP
+   BDLS consensus protocol emulator - Generate quorum then emulate participants
 
 USAGE:
    emucon [global options] command [command options] [arguments...]
 
 COMMANDS:
-   genkeys  generate identies group to participant in consensus
+   genkeys  generate quorum to participant in consensus
    run      start a consensus agent
    help, h  Shows a list of commands or help for one command
 
@@ -28,18 +28,16 @@ GLOBAL OPTIONS:
 ```
 $ emucon genkeys --count 4
 
-$ emucon genkeys --help                                                                                                                        1 ↵
-NAME:
-   emucon genkeys - generate identies group to participant in consensus
+$ emucon genkeys --help                                                                   NAME:
+   emucon genkeys - generate quorum to participant in consensus
 
 USAGE:
    emucon genkeys [command options] [arguments...]
 
 OPTIONS:
-   --count value   number of participant to generate (default: 4)
-   --config value  output quorum file, choose one(number) as a participant to use play the role (default: "./quorum.json")
+   --count value   number of participant in quorum (default: 4)
+   --config value  output quorum file (default: "./quorum.json")
    --help, -h      show help (default: false)
-
 
 ```
 
@@ -59,7 +57,7 @@ OPTIONS:
    --listen value  the client's listening port (default: ":4680")
    --id value      the node id, will use the n-th private key in quorum.json (default: 0)
    --config value  the shared quorum config file (default: "./quorum.json")
-   --peers value   the peers ip list to connect (default: "./peers.json")
+   --peers value   all peers's ip:port list to connect, as a json array (default: "./peers.json")
    --help, -h      show help (default: false)
 ```
 
