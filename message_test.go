@@ -918,6 +918,31 @@ func TestVerifyDecideMessageCorrect(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+func TestValidateDecideMessageCorrect(t *testing.T) {
+	_, sp, privateKey, proofKeys := createDecideMessage(t, 20, 10, 10, 10, 10)
+	consensus := createConsensus(t, 9, 10, proofKeys)
+
+	consensus.SetLeader(&privateKey.PublicKey)
+	bts, err := proto.Marshal(sp)
+	assert.Nil(t, err)
+
+	err = consensus.ValidateDecideMessage(bts)
+	assert.Nil(t, err)
+}
+
+func TestValidateDecideMessageUnknowParticipant(t *testing.T) {
+	_, sp, privateKey, proofKeys := createDecideMessage(t, 20, 10, 10, 10, 10)
+	consensus := createConsensus(t, 9, 10, proofKeys)
+
+	consensus.SetLeader(&privateKey.PublicKey)
+	bts, err := proto.Marshal(sp)
+	assert.Nil(t, err)
+
+	consensus = createConsensus(t, 9, 10, nil)
+	err = consensus.ValidateDecideMessage(bts)
+	assert.NotNil(t, err)
+}
+
 func TestVerifyDecideMessageState(t *testing.T) {
 	m, sp, privateKey, proofKeys := createDecideMessage(t, 20, 10, 10, 10, 10)
 	consensus := createConsensus(t, 9, 10, proofKeys)
