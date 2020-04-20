@@ -736,7 +736,39 @@ func (c *Consensus) verifyCommitMessage(m *Message) error {
 	return nil
 }
 
-// verifyDecideProof verifies proofs from <decide> message, which MUST
+// ValidateDecideMessage validates a <decide> message for non-participants,
+// the consensus core must be correctly initialized to validate.
+func (c *Consensus) ValidateDecideMessage(bts []byte) error {
+	// unmarshal signed message
+	signed := new(SignedProto)
+	err := proto.Unmarshal(bts, signed)
+	if err != nil {
+		return err
+	}
+
+	// check message version
+	if signed.Version != ProtocolVersion {
+		return ErrMessageVersion
+	}
+
+	// check message signature & qualifications
+	m, err := c.verifyMessage(signed)
+	if err != nil {
+		return err
+	}
+
+	// verify decide message
+	if m.Type == MessageType_Decide {
+		err := c.verifyDecideMessage(m, signed)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return ErrMessageUnknownMessageType
+}
+
+// verifyDecideMessage verifies proofs from <decide> message, which MUST
 // contain at least 2t+1 individual <commit> messages to B'.
 func (c *Consensus) verifyDecideMessage(m *Message, signed *SignedProto) error {
 	// a <decide> message from leader MUST include data along with the message
