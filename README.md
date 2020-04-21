@@ -219,8 +219,8 @@ See also overload benchmark: [PI4-OVERLOAD.TXT](benchmarks/PI4-OVERLOAD.TXT)
 ## Usage
 
 1. A testing IPC peer -- [ipc_peer.go](ipc_peer.go)
-2. A testing TCP node -- (working in progress)
+2. A testing TCP node -- [TCP based Consensus Emualtor](cmd/emucon)
 
 ## Status
 
-Alpha
+GA
