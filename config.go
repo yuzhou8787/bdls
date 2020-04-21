@@ -52,6 +52,9 @@ type Config struct {
 	PrivateKey *ecdsa.PrivateKey
 	// Consensus Group
 	Participants []*ecdsa.PublicKey
+	// EnableCommitUnicast sets to true to enable <commit> message to be delivered via unicast
+	// if not(by default), <commit> message will be broadcasted
+	EnableCommitUnicast bool
 
 	// StateCompare is a function from user to compare states,
 	// The result will be 0 if a==b, -1 if a < b, and +1 if a > b.

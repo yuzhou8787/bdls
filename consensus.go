@@ -311,6 +311,9 @@ type Consensus struct {
 	// participants is the consensus group, current leader is r % quorum
 	participants []Coordinate
 
+	// set to true to enable <commit> message unicast
+	enableCommitUnicast bool
+
 	// NOTE: fixed leader for testing purpose
 	fixedLeader *Coordinate
 
@@ -346,6 +349,7 @@ func (c *Consensus) init(config *Config) {
 	c.stateHash = config.StateHash
 	c.privateKey = config.PrivateKey
 	c.coordinate = newCoordFromPubKey(&c.privateKey.PublicKey)
+	c.enableCommitUnicast = config.EnableCommitUnicast
 
 	// if config has not set hash function, use the default
 	if c.stateHash == nil {
@@ -939,7 +943,11 @@ func (c *Consensus) sendCommit(msgLock *Message) {
 	m.Height = msgLock.Height // h
 	m.Round = msgLock.Round   // r
 	m.State = msgLock.State   // B'j
-	c.sendTo(&m, c.roundLeader(m.Round))
+	if c.enableCommitUnicast {
+		c.sendTo(&m, c.roundLeader(m.Round))
+	} else {
+		c.broadcast(&m)
+	}
 	c.currentRound.CommitSent = true
 	//log.Println("send:<commit>")
 }
