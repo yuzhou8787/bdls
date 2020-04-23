@@ -3,9 +3,10 @@
 ## Install
 
 ```
-$go get -u github.com/Sperax/bdls/cmd/emucon
-
-$ emucon
+$ git clone https://github.com/Sperax/bdls
+$ cd bdls/emucon
+$ go build .
+$ ./emucon
 NAME:
    BDLS consensus protocol emulator - Generate quorum then emulate participants
 
@@ -26,9 +27,10 @@ GLOBAL OPTIONS:
 ## GENERATE CONSENSUS GROUP KEYS
 
 ```
-$ emucon genkeys --count 4
+$ ./emucon genkeys --count 4
 
-$ emucon genkeys --help                                                                   NAME:
+$ ./emucon genkeys --help                                                                   
+NAME:
    emucon genkeys - generate quorum to participant in consensus
 
 USAGE:
@@ -46,7 +48,7 @@ OPTIONS:
 ## NODES EMULATION
 
 ```
-$ emucon run --help
+$ ./emucon run --help
 NAME:
    emucon run - start a consensus agent
 
@@ -73,10 +75,10 @@ $ cat peers.json
 You can start minimum 4 nodes in 4 different terminal like below:
 
 ```
-$emucon run --id 0 --listen ":4680"
-$emucon run --id 1 --listen ":4681"
-$emucon run --id 2 --listen ":4682"
-$emucon run --id 3 --listen ":4683"
+$./emucon run --id 0 --listen ":4680"
+$./emucon run --id 1 --listen ":4681"
+$./emucon run --id 2 --listen ":4682"
+$./emucon run --id 3 --listen ":4683"
 ```
 
 A succesfully running  node will output something like:
