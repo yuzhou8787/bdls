@@ -743,13 +743,27 @@ func (c *Consensus) verifyCommitMessage(m *Message) error {
 // ValidateDecideMessage validates a <decide> message for non-participants,
 // the consensus core must be correctly initialized to validate.
 func (c *Consensus) ValidateDecideMessage(bts []byte) error {
-	// unmarshal signed message
-	signed := new(SignedProto)
-	err := proto.Unmarshal(bts, signed)
+	signed, err := c.DecodeSignedMessage(bts)
 	if err != nil {
 		return err
 	}
 
+	return c.validateDecideMessage(signed)
+}
+
+// DecodeSignedMessage decodes a binary representation of signed consensus message.
+func (c *Consensus) DecodeSignedMessage(bts []byte) (*SignedProto, error) {
+	signed := new(SignedProto)
+	err := proto.Unmarshal(bts, signed)
+	if err != nil {
+		return nil, err
+	}
+	return signed, nil
+}
+
+// validateDecideMessage validates a decoded <decide> message for non-participants,
+// the consensus core must be correctly initialized to validate.
+func (c *Consensus) validateDecideMessage(signed *SignedProto) error {
 	// check message version
 	if signed.Version != ProtocolVersion {
 		return ErrMessageVersion
