@@ -70,7 +70,7 @@ type Config struct {
 	// a state.
 	StateHash func(State) StateHash
 
-	// MessageCallback will be called if not nil before a message broadcast
+	// MessageCallback will be called if not nil before a message send out
 	MessageCallback func(m *Message, signed *SignedProto)
 }
 
