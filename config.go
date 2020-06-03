@@ -77,10 +77,6 @@ func VerifyConfig(c *Config) error {
 		return ErrConfigEpoch
 	}
 
-	if c.CurrentState == nil {
-		return ErrConfigStateNil
-	}
-
 	if c.StateCompare == nil {
 		return ErrConfigLess
 	}

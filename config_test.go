@@ -17,10 +17,6 @@ func TestVerifyConfig(t *testing.T) {
 
 	config.Epoch = time.Now()
 	err = VerifyConfig(config)
-	assert.Equal(t, ErrConfigStateNil, err)
-
-	config.CurrentState = make([]byte, 1024)
-	err = VerifyConfig(config)
 	assert.Equal(t, ErrConfigLess, err)
 
 	config.StateCompare = func(State, State) int { return 0 }
