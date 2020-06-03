@@ -296,6 +296,8 @@ type Consensus struct {
 	stateValidate func(State) bool
 	// the StateHash function from config
 	stateHash func(State) StateHash
+	// message callback
+	messageCallback func(m *Message, sp *SignedProto)
 
 	// private key
 	privateKey *ecdsa.PrivateKey
@@ -347,6 +349,7 @@ func (c *Consensus) init(config *Config) {
 	c.stateCompare = config.StateCompare
 	c.stateValidate = config.StateValidate
 	c.stateHash = config.StateHash
+	c.messageCallback = config.MessageCallback
 	c.privateKey = config.PrivateKey
 	c.coordinate = newCoordFromPubKey(&c.privateKey.PublicKey)
 	c.enableCommitUnicast = config.EnableCommitUnicast
@@ -973,6 +976,10 @@ func (c *Consensus) broadcast(m *Message) *SignedProto {
 	sp.Version = ProtocolVersion
 	sp.Sign(m, c.privateKey)
 
+	// message callback
+	if c.messageCallback != nil {
+		c.messageCallback(m, sp)
+	}
 	// protobuf marshalling
 	out, err := proto.Marshal(sp)
 	if err != nil {
@@ -995,6 +1002,11 @@ func (c *Consensus) sendTo(m *Message, leader Coordinate) {
 	sp := new(SignedProto)
 	sp.Version = ProtocolVersion
 	sp.Sign(m, c.privateKey)
+
+	// message callback
+	if c.messageCallback != nil {
+		c.messageCallback(m, sp)
+	}
 
 	// protobuf marshalling
 	out, err := proto.Marshal(sp)

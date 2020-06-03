@@ -69,6 +69,9 @@ type Config struct {
 	// StateHash is a function from user to return a hash to uniquely identify
 	// a state.
 	StateHash func(State) StateHash
+
+	// MessageCallback will be called if not nil before a message broadcast
+	MessageCallback func(m *Message, signed *SignedProto)
 }
 
 // VerifyConfig verifies the integrity of this config when creating new consensus object
