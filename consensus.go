@@ -39,7 +39,7 @@ import (
 	"time"
 
 	"github.com/Sperax/bdls/crypto/blake2b"
-	proto "github.com/golang/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 )
 
 const (

@@ -23,7 +23,7 @@ import (
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/Sperax/bdls/crypto/blake2b"
 	"github.com/davecgh/go-spew/spew"
-	proto "github.com/golang/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	"github.com/olekukonko/tablewriter"
 	"github.com/stretchr/testify/assert"
 )

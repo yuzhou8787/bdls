@@ -41,7 +41,7 @@ import (
 
 	"github.com/Sperax/bdls/crypto/blake2b"
 	"github.com/Sperax/bdls/crypto/btcec"
-	proto "github.com/golang/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 )
 
 // ErrPubKey will be returned if error found while decoding message's public key
