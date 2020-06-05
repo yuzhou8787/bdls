@@ -103,4 +103,7 @@ var (
 	ErrCommitStatus          = errors.New("received <commit> message in non COMMIT state")
 	ErrCommitHeightMismatch  = errors.New("the <commit> messge has another height than expected")
 	ErrCommitRoundMismatch   = errors.New("the <commit> message is from another round")
+
+	// <decide> verification
+	ErrMismatchedTargetState = errors.New("the state in <decide> message does not match the provided target state")
 )

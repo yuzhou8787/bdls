@@ -745,13 +745,14 @@ func (c *Consensus) verifyCommitMessage(m *Message) error {
 
 // ValidateDecideMessage validates a <decide> message for non-participants,
 // the consensus core must be correctly initialized to validate.
-func (c *Consensus) ValidateDecideMessage(bts []byte) error {
+// the targetState is to compare the target state enclosed in decide message
+func (c *Consensus) ValidateDecideMessage(bts []byte, targetState []byte) error {
 	signed, err := c.DecodeSignedMessage(bts)
 	if err != nil {
 		return err
 	}
 
-	return c.validateDecideMessage(signed)
+	return c.validateDecideMessage(signed, targetState)
 }
 
 // DecodeSignedMessage decodes a binary representation of signed consensus message.
@@ -766,7 +767,7 @@ func (c *Consensus) DecodeSignedMessage(bts []byte) (*SignedProto, error) {
 
 // validateDecideMessage validates a decoded <decide> message for non-participants,
 // the consensus core must be correctly initialized to validate.
-func (c *Consensus) validateDecideMessage(signed *SignedProto) error {
+func (c *Consensus) validateDecideMessage(signed *SignedProto, targetState []byte) error {
 	// check message version
 	if signed.Version != ProtocolVersion {
 		return ErrMessageVersion
@@ -776,6 +777,11 @@ func (c *Consensus) validateDecideMessage(signed *SignedProto) error {
 	m, err := c.verifyMessage(signed)
 	if err != nil {
 		return err
+	}
+
+	// compare state
+	if !bytes.Equal(m.State, targetState) {
+		return ErrMismatchedTargetState
 	}
 
 	// verify decide message
