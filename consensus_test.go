@@ -66,7 +66,6 @@ func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.
 	// mock config
 	config := new(Config)
 	config.Epoch = time.Now()
-	config.CurrentState = initialData
 	config.CurrentHeight = height
 	config.PrivateKey = privateKey
 	config.StateCompare = func(a State, b State) int { return bytes.Compare(a, b) }
@@ -984,7 +983,6 @@ func testConsensus(t *testing.T, param *testParam) []string {
 			// initiate config
 			config := new(Config)
 			config.Epoch = epoch
-			config.CurrentState = currentState
 			config.CurrentHeight = currentHeight
 			config.PrivateKey = participants[i] // randomized participants
 			config.Participants = pubkeys       // keep all pubkeys

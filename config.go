@@ -46,8 +46,6 @@ type Config struct {
 	Epoch time.Time
 	// CurrentHeight
 	CurrentHeight uint64
-	// CurrentState
-	CurrentState State
 	// PrivateKey
 	PrivateKey *ecdsa.PrivateKey
 	// Consensus Group

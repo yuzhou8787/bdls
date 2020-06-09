@@ -76,12 +76,6 @@ func TestTCPPeer(t *testing.T) {
 
 func testConsensus(t *testing.T, param *testParam) {
 	t.Logf("PARAMETERS: %+v", spew.Sprintf("%+v", param))
-	// initial data
-	initialState := make([]byte, 1024)
-	io.ReadFull(rand.Reader, initialState)
-	h := blake2b.Sum256(initialState)
-	t.Logf("%v genesis state for height: 0, hash:%v", time.Now().Format("15:04:05"), hex.EncodeToString(h[:]))
-
 	var participants []*ecdsa.PrivateKey
 	var pubkeys []*ecdsa.PublicKey
 	for i := 0; i < param.numParticipants; i++ {
@@ -95,7 +89,7 @@ func testConsensus(t *testing.T, param *testParam) {
 	}
 
 	// consensus for one height
-	consensusOneHeight := func(currentHeight uint64, currentState []byte) {
+	consensusOneHeight := func(currentHeight uint64) {
 		// randomize participants, fisher yates shuffle
 		n := uint32(len(participants))
 		for i := n - 1; i > 0; i-- {
@@ -115,7 +109,6 @@ func testConsensus(t *testing.T, param *testParam) {
 			// initiate config
 			config := new(bdls.Config)
 			config.Epoch = epoch
-			config.CurrentState = currentState
 			config.CurrentHeight = currentHeight
 			config.PrivateKey = participants[i] // randomized participants
 			config.Participants = pubkeys       // keep all pubkeys
@@ -219,7 +212,7 @@ func testConsensus(t *testing.T, param *testParam) {
 
 	// loop to stopHeight
 	for i := 0; i < param.stopHeight; i++ {
-		consensusOneHeight(uint64(i), initialState)
+		consensusOneHeight(uint64(i))
 	}
 
 	t.Logf("consensus stopped at height:%v for %v peers %v participants", param.stopHeight, param.numPeers, param.numParticipants)

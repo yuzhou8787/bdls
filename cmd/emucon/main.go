@@ -154,7 +154,6 @@ func main() {
 					// create configuration
 					config := new(bdls.Config)
 					config.Epoch = time.Now()
-					config.CurrentState = make([]byte, 1024) // fake state
 					config.CurrentHeight = 0
 					config.StateCompare = func(a bdls.State, b bdls.State) int { return bytes.Compare(a, b) }
 					config.StateValidate = func(bdls.State) bool { return true }

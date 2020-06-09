@@ -341,7 +341,6 @@ func NewConsensus(config *Config) (*Consensus, error) {
 // init consensus with config
 func (c *Consensus) init(config *Config) {
 	// setting current state & height
-	c.latestState = config.CurrentState
 	c.latestHeight = config.CurrentHeight
 	for k := range config.Participants {
 		c.participants = append(c.participants, newCoordFromPubKey(config.Participants[k]))
