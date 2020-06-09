@@ -350,7 +350,9 @@ func (c *Consensus) init(config *Config) {
 	c.stateHash = config.StateHash
 	c.messageCallback = config.MessageCallback
 	c.privateKey = config.PrivateKey
-	c.coordinate = newCoordFromPubKey(&c.privateKey.PublicKey)
+	if !config.VerifierOnly {
+		c.coordinate = newCoordFromPubKey(&c.privateKey.PublicKey)
+	}
 	c.enableCommitUnicast = config.EnableCommitUnicast
 
 	// if config has not set hash function, use the default
