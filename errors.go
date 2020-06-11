@@ -43,6 +43,7 @@ var (
 
 	// common errors related to every message
 	ErrMessageVersion            = errors.New("the message has different version")
+	ErrMessageValidator          = errors.New("the message has been rejected by external validator")
 	ErrMessageIsEmpty            = errors.New("the message being verified is empty")
 	ErrMessageUnknownMessageType = errors.New("unrecognized message type")
 	ErrMessageSignature          = errors.New("cannot verify the signature of this message")

@@ -297,7 +297,7 @@ type Consensus struct {
 	// the StateHash function from config
 	stateHash func(State) StateHash
 	// message in callback
-	messageInCallback func(m *Message, sp *SignedProto)
+	messageValidator func(m *Message, sp *SignedProto) bool
 	// message out callback
 	messageOutCallback func(m *Message, sp *SignedProto)
 
@@ -350,7 +350,7 @@ func (c *Consensus) init(config *Config) {
 	c.stateCompare = config.StateCompare
 	c.stateValidate = config.StateValidate
 	c.stateHash = config.StateHash
-	c.messageInCallback = config.MessageInCallback
+	c.messageValidator = config.MessageValidator
 	c.messageOutCallback = config.MessageOutCallback
 	c.privateKey = config.PrivateKey
 	if !config.VerifierOnly {
@@ -1191,8 +1191,10 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 	}
 
 	// callback for incoming message
-	if c.messageInCallback != nil {
-		c.messageInCallback(m, signed)
+	if c.messageValidator != nil {
+		if c.messageValidator(m, signed) {
+			return ErrMessageValidator
+		}
 	}
 
 	// message switch

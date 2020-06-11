@@ -70,8 +70,8 @@ type Config struct {
 	// a state.
 	StateHash func(State) StateHash
 
-	// MessageInCallBack will be called if not nil when a message inputs into ReceiveMessage
-	MessageInCallback func(m *Message, signed *SignedProto)
+	// MessageValidator is an external validator to be called when a message inputs into ReceiveMessage
+	MessageValidator func(m *Message, signed *SignedProto) bool
 
 	// MessageOutCallback will be called if not nil before a message send out
 	MessageOutCallback func(m *Message, signed *SignedProto)
