@@ -44,6 +44,8 @@ message SignedProto {
 	// signature r,s for prefix+messages+version+x+y above
 	bytes r = 5;
 	bytes s = 6;
+	// Auxcilliary Data set by user, and send along the signedproto
+	bytes AuxData = 7;
 }
 
 // MessageType defines supported message types
