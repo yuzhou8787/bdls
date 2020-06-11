@@ -296,8 +296,10 @@ type Consensus struct {
 	stateValidate func(State) bool
 	// the StateHash function from config
 	stateHash func(State) StateHash
-	// message callback
-	messageCallback func(m *Message, sp *SignedProto)
+	// message in callback
+	messageInCallback func(m *Message, sp *SignedProto)
+	// message out callback
+	messageOutCallback func(m *Message, sp *SignedProto)
 
 	// private key
 	privateKey *ecdsa.PrivateKey
@@ -348,7 +350,8 @@ func (c *Consensus) init(config *Config) {
 	c.stateCompare = config.StateCompare
 	c.stateValidate = config.StateValidate
 	c.stateHash = config.StateHash
-	c.messageCallback = config.MessageCallback
+	c.messageInCallback = config.MessageInCallback
+	c.messageOutCallback = config.MessageOutCallback
 	c.privateKey = config.PrivateKey
 	if !config.VerifierOnly {
 		c.coordinate = newCoordFromPubKey(&c.privateKey.PublicKey)
@@ -994,8 +997,8 @@ func (c *Consensus) broadcast(m *Message) *SignedProto {
 	sp.Sign(m, c.privateKey)
 
 	// message callback
-	if c.messageCallback != nil {
-		c.messageCallback(m, sp)
+	if c.messageOutCallback != nil {
+		c.messageOutCallback(m, sp)
 	}
 	// protobuf marshalling
 	out, err := proto.Marshal(sp)
@@ -1021,8 +1024,8 @@ func (c *Consensus) sendTo(m *Message, leader Coordinate) {
 	sp.Sign(m, c.privateKey)
 
 	// message callback
-	if c.messageCallback != nil {
-		c.messageCallback(m, sp)
+	if c.messageOutCallback != nil {
+		c.messageOutCallback(m, sp)
 	}
 
 	// protobuf marshalling
@@ -1185,6 +1188,11 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 	m, err := c.verifyMessage(signed)
 	if err != nil {
 		return err
+	}
+
+	// callback for incoming message
+	if c.messageInCallback != nil {
+		c.messageInCallback(m, signed)
 	}
 
 	// message switch

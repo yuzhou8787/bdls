@@ -70,8 +70,11 @@ type Config struct {
 	// a state.
 	StateHash func(State) StateHash
 
-	// MessageCallback will be called if not nil before a message send out
-	MessageCallback func(m *Message, signed *SignedProto)
+	// MessageInCallBack will be called if not nil when a message inputs into ReceiveMessage
+	MessageInCallback func(m *Message, signed *SignedProto)
+
+	// MessageOutCallback will be called if not nil before a message send out
+	MessageOutCallback func(m *Message, signed *SignedProto)
 }
 
 // VerifyConfig verifies the integrity of this config when creating new consensus object
