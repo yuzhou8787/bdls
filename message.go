@@ -31,7 +31,6 @@
 package bdls
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -90,8 +89,8 @@ func (t *PubKeyAxis) Size() int { return SizeAxis }
 // Coordinate encodes X-axis and Y-axis for a publickey in an array
 type Coordinate [2 * SizeAxis]byte
 
-// create coordinate from public key
-func newCoordFromPubKey(pubkey *ecdsa.PublicKey) (ret Coordinate) {
+// default method to derive coordinate from public key
+func PubKeyToCoordinate(pubkey *ecdsa.PublicKey) (ret Coordinate) {
 	var X PubKeyAxis
 	var Y PubKeyAxis
 
@@ -107,21 +106,6 @@ func newCoordFromPubKey(pubkey *ecdsa.PublicKey) (ret Coordinate) {
 
 	copy(ret[:SizeAxis], X[:])
 	copy(ret[SizeAxis:], Y[:])
-	return
-}
-
-// Equal tests if X,Y axis equals to a coordinates
-func (c Coordinate) Equal(x1 PubKeyAxis, y1 PubKeyAxis) bool {
-	if bytes.Equal(x1[:], c[:SizeAxis]) && bytes.Equal(y1[:], c[SizeAxis:]) {
-		return true
-	}
-	return false
-}
-
-// Coordinate encodes X,Y into a coordinate
-func (sp *SignedProto) Coordinate() (ret Coordinate) {
-	copy(ret[:SizeAxis], sp.X[:])
-	copy(ret[SizeAxis:], sp.Y[:])
 	return
 }
 
@@ -214,4 +198,13 @@ func (sp *SignedProto) Verify() bool {
 	S.SetBytes(sp.S[:])
 
 	return ecdsa.Verify(&pubkey, hash, &R, &S)
+}
+
+// PublicKey returns the public key of this signed message
+func (sp *SignedProto) PublicKey() *ecdsa.PublicKey {
+	pubkey := new(ecdsa.PublicKey)
+	pubkey.Curve = DefaultCurve
+	pubkey.X = big.NewInt(0).SetBytes(sp.X[:])
+	pubkey.Y = big.NewInt(0).SetBytes(sp.Y[:])
+	return pubkey
 }

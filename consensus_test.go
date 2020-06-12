@@ -37,13 +37,13 @@ func init() {
 
 // (testing augumented function) SetLeader sets a fixed leader for consensus
 func (c *Consensus) SetLeader(key *ecdsa.PublicKey) {
-	coord := newCoordFromPubKey(key)
+	coord := PubKeyToCoordinate(key)
 	c.fixedLeader = &coord
 }
 
 // (testing augumented function) AddParticipant add a new participant in the quorum
 func (c *Consensus) AddParticipant(key *ecdsa.PublicKey) {
-	coord := newCoordFromPubKey(key)
+	coord := PubKeyToCoordinate(key)
 	for k := range c.participants {
 		if c.participants[k] == coord {
 			return
@@ -74,9 +74,11 @@ func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.
 	config.StateHash = func(a State) StateHash { return blake2b.Sum256(a) }
 
 	// add all input keys as the quorum
-	config.Participants = []*ecdsa.PublicKey{&privateKey.PublicKey}
+	config.Participants = []Coordinate{PubKeyToCoordinate(&privateKey.PublicKey)}
 	// and myself
-	config.Participants = append(config.Participants, quorum...)
+	for _, pubkey := range quorum {
+		config.Participants = append(config.Participants, PubKeyToCoordinate(pubkey))
+	}
 
 	consensus := new(Consensus)
 	consensus.init(config)
@@ -941,7 +943,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 	t.Logf("%v genesis state for height: 0, hash:%v", time.Now().Format("15:04:05"), hex.EncodeToString(h[:]))
 
 	var participants []*ecdsa.PrivateKey
-	var pubkeys []*ecdsa.PublicKey
+	var coords []Coordinate
 	for i := 0; i < param.numParticipants; i++ {
 		privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 		if err != nil {
@@ -949,7 +951,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 		}
 
 		participants = append(participants, privateKey)
-		pubkeys = append(pubkeys, &privateKey.PublicKey)
+		coords = append(coords, PubKeyToCoordinate(&privateKey.PublicKey))
 	}
 
 	// begin proposing
@@ -985,7 +987,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 			config.Epoch = epoch
 			config.CurrentHeight = currentHeight
 			config.PrivateKey = participants[i] // randomized participants
-			config.Participants = pubkeys       // keep all pubkeys
+			config.Participants = coords        // keep all coords
 
 			// should replace with real function
 			config.StateCompare = func(a State, b State) int { return bytes.Compare(a, b) }

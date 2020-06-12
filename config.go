@@ -51,7 +51,7 @@ type Config struct {
 	// PrivateKey
 	PrivateKey *ecdsa.PrivateKey
 	// Consensus Group
-	Participants []*ecdsa.PublicKey
+	Participants []Coordinate
 	// EnableCommitUnicast sets to true to enable <commit> message to be delivered via unicast
 	// if not(by default), <commit> message will be broadcasted
 	EnableCommitUnicast bool
