@@ -34,12 +34,13 @@ import "errors"
 
 var (
 	// Config Related
-	ErrConfigEpoch         = errors.New("Config.Epoch is nil")
-	ErrConfigStateNil      = errors.New("Config.CurrentState is nil")
-	ErrConfigLess          = errors.New("Config.Less function has not set")
-	ErrConfigValidateState = errors.New("Config.ValidateState function has not set")
-	ErrConfigPrivateKey    = errors.New("Config.PrivateKey has not set")
-	ErrConfigParticipants  = errors.New("Config.Participants must contain at least 4 participants")
+	ErrConfigEpoch              = errors.New("Config.Epoch is nil")
+	ErrConfigStateNil           = errors.New("Config.CurrentState is nil")
+	ErrConfigStateCompare       = errors.New("Config.StateCompare function has not set")
+	ErrConfigStateValidate      = errors.New("Config.StateValidate function has not set")
+	ErrConfigPrivateKey         = errors.New("Config.PrivateKey has not set")
+	ErrConfigParticipants       = errors.New("Config.Participants must contain at least 4 participants")
+	ErrConfigPubKeyToCoordinate = errors.New("Config.must contain at least 4 participants")
 
 	// common errors related to every message
 	ErrMessageVersion            = errors.New("the message has different version")

@@ -17,11 +17,11 @@ func TestVerifyConfig(t *testing.T) {
 
 	config.Epoch = time.Now()
 	err = VerifyConfig(config)
-	assert.Equal(t, ErrConfigLess, err)
+	assert.Equal(t, ErrConfigStateCompare, err)
 
 	config.StateCompare = func(State, State) int { return 0 }
 	err = VerifyConfig(config)
-	assert.Equal(t, ErrConfigValidateState, err)
+	assert.Equal(t, ErrConfigStateValidate, err)
 
 	config.StateValidate = func(State) bool { return true }
 	err = VerifyConfig(config)
@@ -37,7 +37,7 @@ func TestVerifyConfig(t *testing.T) {
 	for i := 0; i < ConfigMinimumParticipants; i++ {
 		randKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
 		assert.Nil(t, err)
-		config.Participants = append(config.Participants, PubKeyToCoordinate(&randKey.PublicKey))
+		config.Participants = append(config.Participants, DefaultPubKeyToCoordinate(&randKey.PublicKey))
 	}
 
 	err = VerifyConfig(config)

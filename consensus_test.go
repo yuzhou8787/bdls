@@ -37,13 +37,13 @@ func init() {
 
 // (testing augumented function) SetLeader sets a fixed leader for consensus
 func (c *Consensus) SetLeader(key *ecdsa.PublicKey) {
-	coord := PubKeyToCoordinate(key)
+	coord := DefaultPubKeyToCoordinate(key)
 	c.fixedLeader = &coord
 }
 
 // (testing augumented function) AddParticipant add a new participant in the quorum
 func (c *Consensus) AddParticipant(key *ecdsa.PublicKey) {
-	coord := PubKeyToCoordinate(key)
+	coord := DefaultPubKeyToCoordinate(key)
 	for k := range c.participants {
 		if c.participants[k] == coord {
 			return
@@ -74,10 +74,10 @@ func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.
 	config.StateHash = func(a State) StateHash { return blake2b.Sum256(a) }
 
 	// add all input keys as the quorum
-	config.Participants = []Coordinate{PubKeyToCoordinate(&privateKey.PublicKey)}
+	config.Participants = []Coordinate{DefaultPubKeyToCoordinate(&privateKey.PublicKey)}
 	// and myself
 	for _, pubkey := range quorum {
-		config.Participants = append(config.Participants, PubKeyToCoordinate(pubkey))
+		config.Participants = append(config.Participants, DefaultPubKeyToCoordinate(pubkey))
 	}
 
 	consensus := new(Consensus)
@@ -951,7 +951,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 		}
 
 		participants = append(participants, privateKey)
-		coords = append(coords, PubKeyToCoordinate(&privateKey.PublicKey))
+		coords = append(coords, DefaultPubKeyToCoordinate(&privateKey.PublicKey))
 	}
 
 	// begin proposing

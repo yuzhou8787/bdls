@@ -68,6 +68,7 @@ type Config struct {
 
 	// StateHash is a function from user to return a hash to uniquely identify
 	// a state.
+	// (optional). Default to DefaultHash()
 	StateHash func(State) StateHash
 
 	// MessageValidator is an external validator to be called when a message inputs into ReceiveMessage
@@ -75,6 +76,10 @@ type Config struct {
 
 	// MessageOutCallback will be called if not nil before a message send out
 	MessageOutCallback func(m *Message, signed *SignedProto)
+
+	// Coordiantes derviation from ecdsa.PublicKey
+	// (optional). Default to DefaultPubKeyToCoordinate
+	PubKeyToCoordinate func(pubkey *ecdsa.PublicKey) (ret Coordinate)
 }
 
 // VerifyConfig verifies the integrity of this config when creating new consensus object
@@ -84,11 +89,11 @@ func VerifyConfig(c *Config) error {
 	}
 
 	if c.StateCompare == nil {
-		return ErrConfigLess
+		return ErrConfigStateCompare
 	}
 
 	if c.StateValidate == nil {
-		return ErrConfigValidateState
+		return ErrConfigStateValidate
 	}
 
 	if !c.VerifierOnly { // a verifier do not need a private key

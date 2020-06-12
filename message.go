@@ -90,7 +90,7 @@ func (t *PubKeyAxis) Size() int { return SizeAxis }
 type Coordinate [2 * SizeAxis]byte
 
 // default method to derive coordinate from public key
-func PubKeyToCoordinate(pubkey *ecdsa.PublicKey) (ret Coordinate) {
+func DefaultPubKeyToCoordinate(pubkey *ecdsa.PublicKey) (ret Coordinate) {
 	var X PubKeyAxis
 	var Y PubKeyAxis
 
