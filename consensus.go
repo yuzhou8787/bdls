@@ -1199,7 +1199,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 
 	// callback for incoming message
 	if c.messageValidator != nil {
-		if c.messageValidator(m, signed) {
+		if !c.messageValidator(m, signed) {
 			return ErrMessageValidator
 		}
 	}
