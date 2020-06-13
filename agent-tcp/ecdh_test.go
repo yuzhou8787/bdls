@@ -10,9 +10,9 @@ import (
 )
 
 func TestECDH(t *testing.T) {
-	key1, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
+	key1, err := ecdsa.GenerateKey(bdls.S256Curve, rand.Reader)
 	assert.Nil(t, err)
-	key2, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
+	key2, err := ecdsa.GenerateKey(bdls.S256Curve, rand.Reader)
 	assert.Nil(t, err)
 
 	s1 := ECDH(&key1.PublicKey, key2)

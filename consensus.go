@@ -34,6 +34,7 @@ import (
 	"bytes"
 	"container/list"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"net"
 	"sort"
 	"time"
@@ -307,6 +308,8 @@ type Consensus struct {
 	privateKey *ecdsa.PrivateKey
 	// my publickey coodinate
 	coordinate Coordinate
+	// curve retrieved from private key
+	curve elliptic.Curve
 
 	// transmission delay
 	latency time.Duration
@@ -364,9 +367,8 @@ func (c *Consensus) init(config *Config) {
 	if c.pubKeyToCoordinate == nil {
 		c.pubKeyToCoordinate = DefaultPubKeyToCoordinate
 	}
-	if !config.VerifierOnly {
-		c.coordinate = c.pubKeyToCoordinate(&c.privateKey.PublicKey)
-	}
+	c.coordinate = c.pubKeyToCoordinate(&c.privateKey.PublicKey)
+	c.curve = c.privateKey.PublicKey.Curve
 
 	// initial default parameters settings
 	c.latency = DefaultConsensusLatency
@@ -446,7 +448,7 @@ func (c *Consensus) verifyMessage(signed *SignedProto) (*Message, error) {
 	// check signer's identity, all participants have proven
 	// public key
 	knownParticipants := false
-	coord := c.pubKeyToCoordinate(signed.PublicKey())
+	coord := c.pubKeyToCoordinate(signed.PublicKey(c.curve))
 	for k := range c.participants {
 		if coord == c.participants[k] {
 			knownParticipants = true
@@ -471,7 +473,7 @@ func (c *Consensus) verifyMessage(signed *SignedProto) (*Message, error) {
 	*/
 
 	// as public key is proven , we don't have to verify the public key
-	if !signed.Verify() {
+	if !signed.Verify(c.curve) {
 		return nil, ErrMessageSignature
 	}
 
@@ -532,7 +534,7 @@ func (c *Consensus) verifyLockMessage(m *Message, signed *SignedProto) error {
 
 	// make sure this message has been signed by the leader
 	leaderKey := c.roundLeader(m.Round)
-	if c.pubKeyToCoordinate(signed.PublicKey()) != leaderKey {
+	if c.pubKeyToCoordinate(signed.PublicKey(c.curve)) != leaderKey {
 		return ErrLockNotSignedByLeader
 	}
 
@@ -572,7 +574,7 @@ func (c *Consensus) verifyLockMessage(m *Message, signed *SignedProto) error {
 
 		// use map to guarantee we will only accept at most 1 message from one
 		// individual participant
-		rcs[c.pubKeyToCoordinate(proof.PublicKey())] = mProof.State
+		rcs[c.pubKeyToCoordinate(proof.PublicKey(c.curve))] = mProof.State
 	}
 
 	// count individual proofs to B', which has already guaranteed to be the maximal one.
@@ -637,7 +639,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 
 	// make sure this message has been signed by the leader
 	leaderKey := c.roundLeader(m.Round)
-	if c.pubKeyToCoordinate(signed.PublicKey()) != leaderKey {
+	if c.pubKeyToCoordinate(signed.PublicKey(c.curve)) != leaderKey {
 		return ErrSelectNotSignedByLeader
 	}
 
@@ -679,7 +681,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 		}
 
 		// we also stores B'' == NULL for counting
-		rcs[c.pubKeyToCoordinate(proof.PublicKey())] = mProof.State
+		rcs[c.pubKeyToCoordinate(proof.PublicKey(c.curve))] = mProof.State
 	}
 
 	// check we have at least 2*t+1 proof
@@ -836,7 +838,7 @@ func (c *Consensus) verifyDecideMessage(m *Message, signed *SignedProto) error {
 
 	// make sure this message has been signed by the leader
 	leaderKey := c.roundLeader(m.Round)
-	if c.pubKeyToCoordinate(signed.PublicKey()) != leaderKey {
+	if c.pubKeyToCoordinate(signed.PublicKey(c.curve)) != leaderKey {
 		return ErrDecideNotSignedByLeader
 	}
 
@@ -873,7 +875,7 @@ func (c *Consensus) verifyDecideMessage(m *Message, signed *SignedProto) error {
 			}
 		}
 
-		commits[c.pubKeyToCoordinate(proof.PublicKey())] = mProof.State
+		commits[c.pubKeyToCoordinate(proof.PublicKey(c.curve))] = mProof.State
 	}
 
 	// count proofs to m.State

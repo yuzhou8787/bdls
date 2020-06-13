@@ -82,7 +82,7 @@ func main() {
 					quorum := &Quorum{}
 					// generate private keys
 					for i := 0; i < count; i++ {
-						privateKey, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
+						privateKey, err := ecdsa.GenerateKey(bdls.S256Curve, rand.Reader)
 						if err != nil {
 							return err
 						}
@@ -160,16 +160,16 @@ func main() {
 
 					for k := range quorum.Keys {
 						priv := new(ecdsa.PrivateKey)
-						priv.PublicKey.Curve = bdls.DefaultCurve
+						priv.PublicKey.Curve = bdls.S256Curve
 						priv.D = quorum.Keys[k]
-						priv.PublicKey.X, priv.PublicKey.Y = bdls.DefaultCurve.ScalarBaseMult(priv.D.Bytes())
+						priv.PublicKey.X, priv.PublicKey.Y = bdls.S256Curve.ScalarBaseMult(priv.D.Bytes())
 						// myself
 						if id == k {
 							config.PrivateKey = priv
 						}
 
 						// set validator sequence
-						config.Participants = append(config.Participants, &priv.PublicKey)
+						config.Participants = append(config.Participants, bdls.DefaultPubKeyToCoordinate(&priv.PublicKey))
 					}
 
 					if err := startConsensus(c, config); err != nil {

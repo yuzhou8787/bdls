@@ -416,10 +416,10 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 	// only when in init status, authentication process cannot rollback
 	// to prevent from malicious re-authentication DoS
 	if p.peerAuthStatus == peerNotAuthenticated {
-		peerPublicKey := &ecdsa.PublicKey{Curve: bdls.DefaultCurve, X: big.NewInt(0).SetBytes(authKey.X), Y: big.NewInt(0).SetBytes(authKey.Y)}
+		peerPublicKey := &ecdsa.PublicKey{Curve: bdls.S256Curve, X: big.NewInt(0).SetBytes(authKey.X), Y: big.NewInt(0).SetBytes(authKey.Y)}
 
 		// on curve test
-		if !bdls.DefaultCurve.IsOnCurve(peerPublicKey.X, peerPublicKey.Y) {
+		if !bdls.S256Curve.IsOnCurve(peerPublicKey.X, peerPublicKey.Y) {
 			p.peerAuthStatus = peerAuthenticatedFailed
 			return ErrKeyNotOnCurve
 		}
@@ -427,7 +427,7 @@ func (p *TCPPeer) handleKeyAuthInit(authKey *KeyAuthInit) error {
 		p.peerPublicKey = peerPublicKey
 
 		// create ephermal key for authentication
-		ephemeral, err := ecdsa.GenerateKey(bdls.DefaultCurve, rand.Reader)
+		ephemeral, err := ecdsa.GenerateKey(bdls.S256Curve, rand.Reader)
 		if err != nil {
 			panic(err)
 		}
@@ -483,7 +483,7 @@ func (p *TCPPeer) handleKeyAuthChallenge(challenge *KeyAuthChallenge) error {
 	defer p.Unlock()
 	if p.localAuthState == localAuthKeySent {
 		// use ECDH to recover shared-key
-		pubkey := &ecdsa.PublicKey{Curve: bdls.DefaultCurve, X: big.NewInt(0).SetBytes(challenge.X), Y: big.NewInt(0).SetBytes(challenge.Y)}
+		pubkey := &ecdsa.PublicKey{Curve: bdls.S256Curve, X: big.NewInt(0).SetBytes(challenge.X), Y: big.NewInt(0).SetBytes(challenge.Y)}
 		// derive secret with my private key
 		secret := ECDH(pubkey, p.agent.privateKey)
 

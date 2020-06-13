@@ -46,8 +46,8 @@ import (
 // ErrPubKey will be returned if error found while decoding message's public key
 var ErrPubKey = errors.New("incorrect pubkey format")
 
-// default elliptic curve for signing
-var DefaultCurve elliptic.Curve = btcec.S256()
+// secp256k1 elliptic curve
+var S256Curve elliptic.Curve = btcec.S256()
 
 const (
 	// SizeAxis defines byte size of X-axis or Y-axis in a public key
@@ -184,12 +184,12 @@ func (sp *SignedProto) Sign(m *Message, privateKey *ecdsa.PrivateKey) {
 }
 
 // Verify the signature of this signed message
-func (sp *SignedProto) Verify() bool {
+func (sp *SignedProto) Verify(curve elliptic.Curve) bool {
 	var X, Y, R, S big.Int
 	hash := sp.Hash()
 	// verify against public key and r, s
 	pubkey := ecdsa.PublicKey{}
-	pubkey.Curve = DefaultCurve
+	pubkey.Curve = curve
 	pubkey.X = &X
 	pubkey.Y = &Y
 	X.SetBytes(sp.X[:])
@@ -201,9 +201,9 @@ func (sp *SignedProto) Verify() bool {
 }
 
 // PublicKey returns the public key of this signed message
-func (sp *SignedProto) PublicKey() *ecdsa.PublicKey {
+func (sp *SignedProto) PublicKey(curve elliptic.Curve) *ecdsa.PublicKey {
 	pubkey := new(ecdsa.PublicKey)
-	pubkey.Curve = DefaultCurve
+	pubkey.Curve = curve
 	pubkey.X = big.NewInt(0).SetBytes(sp.X[:])
 	pubkey.Y = big.NewInt(0).SetBytes(sp.Y[:])
 	return pubkey

@@ -19,14 +19,14 @@ func createRoundChangeMessage(t *testing.T, height uint64, round uint64) (*Messa
 	_, err := io.ReadFull(rand.Reader, state)
 	assert.Nil(t, err)
 	// key generation
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 	return createRoundChangeMessageSigner(t, height, round, state, privateKey)
 }
 
 func createRoundChangeMessageState(t *testing.T, height uint64, round uint64, state State) (*Message, *SignedProto, *ecdsa.PrivateKey) {
 	// key generation
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 	return createRoundChangeMessageSigner(t, height, round, state, privateKey)
 }
@@ -65,7 +65,7 @@ func createCommitMessageSigner(t *testing.T, height uint64, round uint64, state 
 // createCommitMessage generates a random valid <commit> message
 func createCommitMessage(t *testing.T, height uint64, round uint64, state State) (*Message, *SignedProto, *ecdsa.PrivateKey) {
 	// key generation
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 	return createCommitMessageSigner(t, height, round, state, privateKey)
 }
@@ -84,7 +84,7 @@ func createLockReleaseMessage(t *testing.T, numProofs int, height uint64, round 
 }
 
 func createLockMessageState(t *testing.T, numProofs int, state []byte, height uint64, round uint64, proofHeight uint64, proofRound uint64) (*Message, *SignedProto, *ecdsa.PrivateKey, []*ecdsa.PublicKey) {
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 
 	valid := 2*((numProofs-1)/3) + 1
@@ -137,7 +137,7 @@ func createLockMessage(t *testing.T, numProofs int, height uint64, round uint64,
 // the all roundchange proposals are random and the first proof is signed by message's signer
 func createSelectMessage(t *testing.T, numProofs int, height uint64, round uint64, proofHeight uint64, proofRound uint64) (*Message, *SignedProto, *ecdsa.PrivateKey, []*ecdsa.PublicKey) {
 	// signer's key
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 
 	// <select>
@@ -183,7 +183,7 @@ func createSelectMessage(t *testing.T, numProofs int, height uint64, round uint6
 // createDecideMessage creates a valid <decide> message, and generate <commit> proofs based on quorum,
 // the first 2t+1 roundchange proposals are the same
 func createDecideMessage(t *testing.T, numProofs int, height uint64, round uint64, proofHeight uint64, proofRound uint64) (*Message, *SignedProto, *ecdsa.PrivateKey, []*ecdsa.PublicKey) {
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 	valid := 2*((numProofs-1)/3) + 1
 	state := make([]byte, 1024)
@@ -231,7 +231,7 @@ func createDecideMessage(t *testing.T, numProofs int, height uint64, round uint6
 ///////////////////////////////////////////////////////////////////////////////
 func TestVerifyMessage(t *testing.T) {
 	// signer
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 
 	// create consensus
@@ -278,7 +278,7 @@ func TestVerifyMessage(t *testing.T) {
 
 func TestVerifyMessageUnknownVersion(t *testing.T) {
 	// signer
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 
 	// create consensus
@@ -314,7 +314,7 @@ func TestVerifyMessageUnknownVersion(t *testing.T) {
 
 func TestVerifyMessageUnknownType(t *testing.T) {
 	// signer
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 
 	// create consensus
@@ -333,7 +333,7 @@ func TestVerifyMessageUnknownType(t *testing.T) {
 
 func TestVerifyMessageUnknownParticipant(t *testing.T) {
 	// signer
-	privateKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 
 	// create consensus
@@ -419,7 +419,7 @@ func TestVerifyLockMessageNotSignedByLeader(t *testing.T) {
 	consensus := createConsensus(t, 0, 0, proofKeys)
 
 	// set a random leader
-	randKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	randKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 	consensus.SetLeader(&randKey.PublicKey)
 
@@ -588,7 +588,7 @@ func TestVerifySelectMessageNotSignedByLeader(t *testing.T) {
 	consensus := createConsensus(t, 0, 0, proofKeys)
 
 	// set a random leader
-	randKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	randKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 	consensus.SetLeader(&randKey.PublicKey)
 
@@ -973,7 +973,7 @@ func TestVerifyDecideMessageNotSignedByLeader(t *testing.T) {
 	consensus := createConsensus(t, 0, 0, proofKeys)
 
 	// set a random leader
-	randKey, err := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	randKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 	assert.Nil(t, err)
 	consensus.SetLeader(&randKey.PublicKey)
 
@@ -1095,11 +1095,11 @@ func TestVerifyDecideMessageProofInsufficient(t *testing.T) {
 }
 
 func BenchmarkSecp256k1Verify(b *testing.B) {
-	privateKey, _ := ecdsa.GenerateKey(DefaultCurve, rand.Reader)
+	privateKey, _ := ecdsa.GenerateKey(S256Curve, rand.Reader)
 
 	for i := 0; i < b.N; i++ {
 		_, sp, _ := createRoundChangeMessageSigner(b, 0, 0, nil, privateKey)
-		sp.Verify()
+		sp.Verify(S256Curve)
 	}
 }
 

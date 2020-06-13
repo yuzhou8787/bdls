@@ -42,8 +42,6 @@ const (
 
 // Config is to config the parameters of BDLS consensus protocol
 type Config struct {
-	// Set as verifier only (i.e. only call ValidateDecideMessage())
-	VerifierOnly bool
 	// the starting time point for consensus
 	Epoch time.Time
 	// CurrentHeight
@@ -96,10 +94,8 @@ func VerifyConfig(c *Config) error {
 		return ErrConfigStateValidate
 	}
 
-	if !c.VerifierOnly { // a verifier do not need a private key
-		if c.PrivateKey == nil {
-			return ErrConfigPrivateKey
-		}
+	if c.PrivateKey == nil {
+		return ErrConfigPrivateKey
 	}
 
 	if len(c.Participants) < ConfigMinimumParticipants {
