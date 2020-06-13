@@ -368,7 +368,7 @@ func (c *Consensus) init(config *Config) {
 		c.pubKeyToCoordinate = DefaultPubKeyToCoordinate
 	}
 	c.coordinate = c.pubKeyToCoordinate(&c.privateKey.PublicKey)
-	c.curve = c.privateKey.PublicKey.Curve
+	c.curve = c.privateKey.Curve
 
 	// initial default parameters settings
 	c.latency = DefaultConsensusLatency
