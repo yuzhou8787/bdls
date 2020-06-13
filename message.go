@@ -53,7 +53,7 @@ const (
 	// SizeAxis defines byte size of X-axis or Y-axis in a public key
 	SizeAxis = 32
 	// SignaturePrefix is the prefix for signing a consensus message
-	SignaturePrefix = "===Sperax Signed Message===\n"
+	SignaturePrefix = "BDLS_CONSENSUS_SIGNATURE"
 )
 
 // PubKeyAxis defines X-axis or Y-axis in a public key
@@ -86,11 +86,11 @@ func (t *PubKeyAxis) Unmarshal(data []byte) error {
 // Size implements protobuf Size
 func (t *PubKeyAxis) Size() int { return SizeAxis }
 
-// Coordinate encodes X-axis and Y-axis for a publickey in an array
-type Coordinate [2 * SizeAxis]byte
+// Identity is a user-defined struct to encode X-axis and Y-axis for a publickey in an array
+type Identity [2 * SizeAxis]byte
 
 // default method to derive coordinate from public key
-func DefaultPubKeyToCoordinate(pubkey *ecdsa.PublicKey) (ret Coordinate) {
+func DefaultPubKeyToIdentity(pubkey *ecdsa.PublicKey) (ret Identity) {
 	var X PubKeyAxis
 	var Y PubKeyAxis
 

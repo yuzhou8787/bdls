@@ -37,13 +37,13 @@ func init() {
 
 // (testing augumented function) SetLeader sets a fixed leader for consensus
 func (c *Consensus) SetLeader(key *ecdsa.PublicKey) {
-	coord := DefaultPubKeyToCoordinate(key)
+	coord := DefaultPubKeyToIdentity(key)
 	c.fixedLeader = &coord
 }
 
 // (testing augumented function) AddParticipant add a new participant in the quorum
 func (c *Consensus) AddParticipant(key *ecdsa.PublicKey) {
-	coord := DefaultPubKeyToCoordinate(key)
+	coord := DefaultPubKeyToIdentity(key)
 	for k := range c.participants {
 		if c.participants[k] == coord {
 			return
@@ -73,10 +73,10 @@ func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.
 	config.StateValidate = func(a State) bool { return true }
 
 	// add all input keys as the quorum
-	config.Participants = []Coordinate{DefaultPubKeyToCoordinate(&privateKey.PublicKey)}
+	config.Participants = []Identity{DefaultPubKeyToIdentity(&privateKey.PublicKey)}
 	// and myself
 	for _, pubkey := range quorum {
-		config.Participants = append(config.Participants, DefaultPubKeyToCoordinate(pubkey))
+		config.Participants = append(config.Participants, DefaultPubKeyToIdentity(pubkey))
 	}
 
 	consensus := new(Consensus)
@@ -942,7 +942,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 	t.Logf("%v genesis state for height: 0, hash:%v", time.Now().Format("15:04:05"), hex.EncodeToString(h[:]))
 
 	var participants []*ecdsa.PrivateKey
-	var coords []Coordinate
+	var coords []Identity
 	for i := 0; i < param.numParticipants; i++ {
 		privateKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 		if err != nil {
@@ -950,7 +950,7 @@ func testConsensus(t *testing.T, param *testParam) []string {
 		}
 
 		participants = append(participants, privateKey)
-		coords = append(coords, DefaultPubKeyToCoordinate(&privateKey.PublicKey))
+		coords = append(coords, DefaultPubKeyToIdentity(&privateKey.PublicKey))
 	}
 
 	// begin proposing

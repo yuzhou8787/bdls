@@ -49,7 +49,7 @@ type Config struct {
 	// PrivateKey
 	PrivateKey *ecdsa.PrivateKey
 	// Consensus Group
-	Participants []Coordinate
+	Participants []Identity
 	// EnableCommitUnicast sets to true to enable <commit> message to be delivered via unicast
 	// if not(by default), <commit> message will be broadcasted
 	EnableCommitUnicast bool
@@ -70,9 +70,9 @@ type Config struct {
 	// MessageOutCallback will be called if not nil before a message send out
 	MessageOutCallback func(m *Message, signed *SignedProto)
 
-	// Coordiantes derviation from ecdsa.PublicKey
-	// (optional). Default to DefaultPubKeyToCoordinate
-	PubKeyToCoordinate func(pubkey *ecdsa.PublicKey) (ret Coordinate)
+	// Identity derviation from ecdsa.PublicKey
+	// (optional). Default to DefaultPubKeyToIdentity
+	PubKeyToIdentity func(pubkey *ecdsa.PublicKey) (ret Identity)
 }
 
 // VerifyConfig verifies the integrity of this config when creating new consensus object

@@ -77,7 +77,7 @@ func TestTCPPeer(t *testing.T) {
 func testConsensus(t *testing.T, param *testParam) {
 	t.Logf("PARAMETERS: %+v", spew.Sprintf("%+v", param))
 	var participants []*ecdsa.PrivateKey
-	var coords []bdls.Coordinate
+	var coords []bdls.Identity
 	for i := 0; i < param.numParticipants; i++ {
 		privateKey, err := ecdsa.GenerateKey(bdls.S256Curve, rand.Reader)
 		if err != nil {
@@ -85,7 +85,7 @@ func testConsensus(t *testing.T, param *testParam) {
 		}
 
 		participants = append(participants, privateKey)
-		coords = append(coords, bdls.DefaultPubKeyToCoordinate(&privateKey.PublicKey))
+		coords = append(coords, bdls.DefaultPubKeyToIdentity(&privateKey.PublicKey))
 	}
 
 	// consensus for one height

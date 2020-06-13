@@ -37,7 +37,7 @@ func TestVerifyConfig(t *testing.T) {
 	for i := 0; i < ConfigMinimumParticipants; i++ {
 		randKey, err := ecdsa.GenerateKey(S256Curve, rand.Reader)
 		assert.Nil(t, err)
-		config.Participants = append(config.Participants, DefaultPubKeyToCoordinate(&randKey.PublicKey))
+		config.Participants = append(config.Participants, DefaultPubKeyToIdentity(&randKey.PublicKey))
 	}
 
 	err = VerifyConfig(config)

@@ -169,7 +169,7 @@ func main() {
 						}
 
 						// set validator sequence
-						config.Participants = append(config.Participants, bdls.DefaultPubKeyToCoordinate(&priv.PublicKey))
+						config.Participants = append(config.Participants, bdls.DefaultPubKeyToIdentity(&priv.PublicKey))
 					}
 
 					if err := startConsensus(c, config); err != nil {

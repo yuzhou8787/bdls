@@ -297,8 +297,8 @@ type Consensus struct {
 	messageValidator func(m *Message, sp *SignedProto) bool
 	// message out callback
 	messageOutCallback func(m *Message, sp *SignedProto)
-	// public key to coordinat function
-	pubKeyToCoordinate func(pubkey *ecdsa.PublicKey) Coordinate
+	// public key to identity function
+	pubKeyToIdentity func(pubkey *ecdsa.PublicKey) Identity
 
 	// the StateHash function to identify a state
 	stateHash func(State) StateHash
@@ -306,7 +306,7 @@ type Consensus struct {
 	// private key
 	privateKey *ecdsa.PrivateKey
 	// my publickey coodinate
-	coordinate Coordinate
+	identity Identity
 	// curve retrieved from private key
 	curve elliptic.Curve
 
@@ -317,13 +317,13 @@ type Consensus struct {
 	peers []PeerInterface
 
 	// participants is the consensus group, current leader is r % quorum
-	participants []Coordinate
+	participants []Identity
 
 	// set to true to enable <commit> message unicast
 	enableCommitUnicast bool
 
 	// NOTE: fixed leader for testing purpose
-	fixedLeader *Coordinate
+	fixedLeader *Identity
 
 	// broadcasting messages being sent to myself
 	loopback [][]byte
@@ -354,18 +354,18 @@ func (c *Consensus) init(config *Config) {
 	c.messageValidator = config.MessageValidator
 	c.messageOutCallback = config.MessageOutCallback
 	c.privateKey = config.PrivateKey
-	c.pubKeyToCoordinate = config.PubKeyToCoordinate
+	c.pubKeyToIdentity = config.PubKeyToIdentity
 	c.enableCommitUnicast = config.EnableCommitUnicast
 
 	// if config has not set hash function, use the default
 	if c.stateHash == nil {
 		c.stateHash = defaultHash
 	}
-	// if config has not set public key to coordiantefunction, use the default
-	if c.pubKeyToCoordinate == nil {
-		c.pubKeyToCoordinate = DefaultPubKeyToCoordinate
+	// if config has not set public key to identity function, use the default
+	if c.pubKeyToIdentity == nil {
+		c.pubKeyToIdentity = DefaultPubKeyToIdentity
 	}
-	c.coordinate = c.pubKeyToCoordinate(&c.privateKey.PublicKey)
+	c.identity = c.pubKeyToIdentity(&c.privateKey.PublicKey)
 	c.curve = c.privateKey.Curve
 
 	// initial default parameters settings
@@ -446,7 +446,7 @@ func (c *Consensus) verifyMessage(signed *SignedProto) (*Message, error) {
 	// check signer's identity, all participants have proven
 	// public key
 	knownParticipants := false
-	coord := c.pubKeyToCoordinate(signed.PublicKey(c.curve))
+	coord := c.pubKeyToIdentity(signed.PublicKey(c.curve))
 	for k := range c.participants {
 		if coord == c.participants[k] {
 			knownParticipants = true
@@ -532,12 +532,12 @@ func (c *Consensus) verifyLockMessage(m *Message, signed *SignedProto) error {
 
 	// make sure this message has been signed by the leader
 	leaderKey := c.roundLeader(m.Round)
-	if c.pubKeyToCoordinate(signed.PublicKey(c.curve)) != leaderKey {
+	if c.pubKeyToIdentity(signed.PublicKey(c.curve)) != leaderKey {
 		return ErrLockNotSignedByLeader
 	}
 
 	// validate proofs enclosed in the message one by one
-	rcs := make(map[Coordinate]State)
+	rcs := make(map[Identity]State)
 	for _, proof := range m.Proof {
 		// first we need to verify the signature,and identity of this proof
 		mProof, err := c.verifyMessage(proof)
@@ -572,7 +572,7 @@ func (c *Consensus) verifyLockMessage(m *Message, signed *SignedProto) error {
 
 		// use map to guarantee we will only accept at most 1 message from one
 		// individual participant
-		rcs[c.pubKeyToCoordinate(proof.PublicKey(c.curve))] = mProof.State
+		rcs[c.pubKeyToIdentity(proof.PublicKey(c.curve))] = mProof.State
 	}
 
 	// count individual proofs to B', which has already guaranteed to be the maximal one.
@@ -637,11 +637,11 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 
 	// make sure this message has been signed by the leader
 	leaderKey := c.roundLeader(m.Round)
-	if c.pubKeyToCoordinate(signed.PublicKey(c.curve)) != leaderKey {
+	if c.pubKeyToIdentity(signed.PublicKey(c.curve)) != leaderKey {
 		return ErrSelectNotSignedByLeader
 	}
 
-	rcs := make(map[Coordinate]State)
+	rcs := make(map[Identity]State)
 	for _, proof := range m.Proof {
 		mProof, err := c.verifyMessage(proof)
 		if err != nil {
@@ -679,7 +679,7 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 		}
 
 		// we also stores B'' == NULL for counting
-		rcs[c.pubKeyToCoordinate(proof.PublicKey(c.curve))] = mProof.State
+		rcs[c.pubKeyToIdentity(proof.PublicKey(c.curve))] = mProof.State
 	}
 
 	// check we have at least 2*t+1 proof
@@ -836,11 +836,11 @@ func (c *Consensus) verifyDecideMessage(m *Message, signed *SignedProto) error {
 
 	// make sure this message has been signed by the leader
 	leaderKey := c.roundLeader(m.Round)
-	if c.pubKeyToCoordinate(signed.PublicKey(c.curve)) != leaderKey {
+	if c.pubKeyToIdentity(signed.PublicKey(c.curve)) != leaderKey {
 		return ErrDecideNotSignedByLeader
 	}
 
-	commits := make(map[Coordinate]State)
+	commits := make(map[Identity]State)
 	for _, proof := range m.Proof {
 		mProof, err := c.verifyMessage(proof)
 		if err != nil {
@@ -873,7 +873,7 @@ func (c *Consensus) verifyDecideMessage(m *Message, signed *SignedProto) error {
 			}
 		}
 
-		commits[c.pubKeyToCoordinate(proof.PublicKey(c.curve))] = mProof.State
+		commits[c.pubKeyToIdentity(proof.PublicKey(c.curve))] = mProof.State
 	}
 
 	// count proofs to m.State
@@ -1024,7 +1024,7 @@ func (c *Consensus) broadcast(m *Message) *SignedProto {
 }
 
 // sendTo signs the message with private key before transmitting to the peer.
-func (c *Consensus) sendTo(m *Message, leader Coordinate) {
+func (c *Consensus) sendTo(m *Message, leader Identity) {
 	// sign
 	sp := new(SignedProto)
 	sp.Version = ProtocolVersion
@@ -1042,7 +1042,7 @@ func (c *Consensus) sendTo(m *Message, leader Coordinate) {
 	}
 
 	// we need to send this message to myself (via loopback) if i'm the leader
-	if leader == c.coordinate {
+	if leader == c.identity {
 		c.loopback = append(c.loopback, out)
 		return
 	}
@@ -1050,7 +1050,7 @@ func (c *Consensus) sendTo(m *Message, leader Coordinate) {
 	// otherwise, find and transmit to the leader
 	for _, peer := range c.peers {
 		if pk := peer.GetPublicKey(); pk != nil {
-			coord := c.pubKeyToCoordinate(pk)
+			coord := c.pubKeyToIdentity(pk)
 			if coord == leader {
 				// we do not return here to avoid missing re-connected peer.
 				peer.Send(out)
@@ -1121,8 +1121,8 @@ func (c *Consensus) lockRelease() {
 // and all lower rounds will be cleared while switching.
 func (c *Consensus) switchRound(round uint64) { c.currentRound = c.getRound(round, true) }
 
-// roundLeader returns leader's coordinate for a given round
-func (c *Consensus) roundLeader(round uint64) Coordinate {
+// roundLeader returns leader's identity for a given round
+func (c *Consensus) roundLeader(round uint64) Identity {
 	// NOTE: fixed leader is for testing
 	if c.fixedLeader != nil {
 		return *c.fixedLeader
@@ -1279,7 +1279,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 				// leader of this round MUST wait on collectDuration,
 				// to decide to broadcast <lock> or <select>.
 				leaderKey := c.roundLeader(m.Round)
-				if leaderKey == c.coordinate {
+				if leaderKey == c.identity {
 					// leader's <roundchange> collection timeout
 					c.lockTimeout = now.Add(c.collectDuration(m.Round))
 				} else {
@@ -1294,7 +1294,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 			// we will track max proposed state for each valid added <roundchange>
 			if round == c.currentRound && round.NumRoundChanges() >= 2*c.t()+1 {
 				leaderKey := c.roundLeader(m.Round)
-				if leaderKey == c.coordinate {
+				if leaderKey == c.identity {
 					round.MaxProposedState, round.MaxProposedCount = round.GetMaxProposed()
 				}
 			}
@@ -1394,7 +1394,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 		// leader process commits message from all participants,
 		// check to see if I'm the leader of this round to process this message.
 		leaderKey := c.roundLeader(m.Round)
-		if leaderKey == c.coordinate {
+		if leaderKey == c.identity {
 			// verify commit message.
 			// NOTE: leader only accept commits for current height & round.
 			err := c.verifyCommitMessage(m)
@@ -1482,7 +1482,7 @@ func (c *Consensus) Update(now time.Time) error {
 		// leader's collection, we perform periodically check for <lock> or <select>
 		// check to see if I'm the leader of this round to perform collect timeout
 		leaderKey := c.roundLeader(c.currentRound.RoundNumber)
-		if leaderKey == c.coordinate {
+		if leaderKey == c.identity {
 			// check if we have enough 2t+1 <roundchange> to lock B',
 			// which B' != NULL
 			if c.currentRound.MaxProposedCount >= 2*c.t()+1 {
