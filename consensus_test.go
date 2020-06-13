@@ -71,7 +71,6 @@ func createConsensus(t *testing.T, height uint64, round uint64, quorum []*ecdsa.
 	config.StateCompare = func(a State, b State) int { return bytes.Compare(a, b) }
 
 	config.StateValidate = func(a State) bool { return true }
-	config.StateHash = func(a State) StateHash { return blake2b.Sum256(a) }
 
 	// add all input keys as the quorum
 	config.Participants = []Coordinate{DefaultPubKeyToCoordinate(&privateKey.PublicKey)}
@@ -992,7 +991,6 @@ func testConsensus(t *testing.T, param *testParam) []string {
 			// should replace with real function
 			config.StateCompare = func(a State, b State) int { return bytes.Compare(a, b) }
 			config.StateValidate = func(a State) bool { return true }
-			config.StateHash = func(a State) StateHash { return blake2b.Sum256(a) }
 
 			// consensus
 			consensus, err := NewConsensus(config)

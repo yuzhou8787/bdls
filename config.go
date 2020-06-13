@@ -56,18 +56,13 @@ type Config struct {
 
 	// StateCompare is a function from user to compare states,
 	// The result will be 0 if a==b, -1 if a < b, and +1 if a > b.
-	// Usually this would be block header in blockchain, or replication log in database,
+	// Usually this will lead to block header comparsion in blockchain, or replication log in database,
 	// users should check fields in block header to make comparison.
 	StateCompare func(a State, b State) int
 
 	// StateValidate is a function from user to validate the integrity of
 	// state data.
 	StateValidate func(State) bool
-
-	// StateHash is a function from user to return a hash to uniquely identify
-	// a state.
-	// (optional). Default to DefaultHash()
-	StateHash func(State) StateHash
 
 	// MessageValidator is an external validator to be called when a message inputs into ReceiveMessage
 	MessageValidator func(m *Message, signed *SignedProto) bool

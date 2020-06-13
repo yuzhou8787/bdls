@@ -116,7 +116,6 @@ func testConsensus(t *testing.T, param *testParam) {
 			// should replace with real function
 			config.StateCompare = func(a bdls.State, b bdls.State) int { return bytes.Compare(a, b) }
 			config.StateValidate = func(a bdls.State) bool { return true }
-			config.StateHash = func(a bdls.State) bdls.StateHash { return blake2b.Sum256(a) }
 
 			// consensus
 			consensus, err := bdls.NewConsensus(config)

@@ -60,10 +60,8 @@ type (
 	StateHash [blake2b.Size256]byte
 )
 
-// DefaultHash is the system default hash function, if a hash function has
-// not specified in config, this one will be used to hash and uniquely
-// identifies a state.
-func DefaultHash(s State) StateHash { return blake2b.Sum256(s) }
+// defaultHash is the system default hash function
+func defaultHash(s State) StateHash { return blake2b.Sum256(s) }
 
 type (
 	// consensusStage defines the status of consensus automate
@@ -295,14 +293,15 @@ type Consensus struct {
 	stateCompare func(State, State) int
 	// the StateValidate function from config
 	stateValidate func(State) bool
-	// the StateHash function from config
-	stateHash func(State) StateHash
 	// message in callback
 	messageValidator func(m *Message, sp *SignedProto) bool
 	// message out callback
 	messageOutCallback func(m *Message, sp *SignedProto)
 	// public key to coordinat function
 	pubKeyToCoordinate func(pubkey *ecdsa.PublicKey) Coordinate
+
+	// the StateHash function to identify a state
+	stateHash func(State) StateHash
 
 	// private key
 	privateKey *ecdsa.PrivateKey
@@ -352,7 +351,6 @@ func (c *Consensus) init(config *Config) {
 	c.participants = config.Participants
 	c.stateCompare = config.StateCompare
 	c.stateValidate = config.StateValidate
-	c.stateHash = config.StateHash
 	c.messageValidator = config.MessageValidator
 	c.messageOutCallback = config.MessageOutCallback
 	c.privateKey = config.PrivateKey
@@ -361,7 +359,7 @@ func (c *Consensus) init(config *Config) {
 
 	// if config has not set hash function, use the default
 	if c.stateHash == nil {
-		c.stateHash = DefaultHash
+		c.stateHash = defaultHash
 	}
 	// if config has not set public key to coordiantefunction, use the default
 	if c.pubKeyToCoordinate == nil {
