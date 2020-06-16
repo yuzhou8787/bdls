@@ -1559,6 +1559,20 @@ func (c *Consensus) CurrentProof() *SignedProto { return c.latestProof }
 // SetLatency sets participants expected latency for consensus core
 func (c *Consensus) SetLatency(latency time.Duration) { c.latency = latency }
 
+// HasProposed checks whether some state has been proposed via <roundchange>
+func (c *Consensus) HasProposed(state State) bool {
+	stateHash := c.stateHash(state)
+	for elem := c.rounds.Front(); elem != nil; elem = elem.Next() {
+		cr := elem.Value.(*consensusRound)
+		for k := range cr.roundChanges {
+			if cr.roundChanges[k].StateHash == stateHash {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Join adds a peer to consensus for message delivery, a peer is
 // identified by its address.
 func (c *Consensus) Join(p PeerInterface) bool {
