@@ -294,7 +294,7 @@ type Consensus struct {
 	// the StateValidate function from config
 	stateValidate func(State) bool
 	// message in callback
-	messageValidator func(m *Message, sp *SignedProto) bool
+	messageValidator func(c *Consensus, m *Message, sp *SignedProto) bool
 	// message out callback
 	messageOutCallback func(m *Message, sp *SignedProto)
 	// public key to identity function
@@ -1199,7 +1199,7 @@ func (c *Consensus) ReceiveMessage(bts []byte, now time.Time) error {
 
 	// callback for incoming message
 	if c.messageValidator != nil {
-		if !c.messageValidator(m, signed) {
+		if !c.messageValidator(c, m, signed) {
 			return ErrMessageValidator
 		}
 	}
