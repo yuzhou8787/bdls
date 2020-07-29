@@ -663,18 +663,18 @@ func (c *Consensus) verifySelectMessage(m *Message, signed *SignedProto) error {
 			return ErrSelectProofRoundMismatch
 		}
 
+		// state data validation in proofs
+		if mProof.State != nil {
+			if !c.stateValidate(mProof.State) {
+				return ErrSelectProofStateValidation
+			}
+		}
+
 		// we also need to check the B'' selected by leader is the maximal one,
 		// if data has been proposed.
 		if mProof.State != nil && m.State != nil {
 			if c.stateCompare(m.State, mProof.State) < 0 {
 				return ErrSelectProofNotTheMaximal
-			}
-		}
-
-		// state data validation in proofs
-		if mProof.State != nil {
-			if !c.stateValidate(mProof.State) {
-				return ErrSelectProofStateValidation
 			}
 		}
 
